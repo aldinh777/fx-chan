@@ -1,7 +1,107 @@
-input {
-  width: 64pt;
+:root {
+  --bg: #061217; /* deep teal-black */
+  --panel: #0a1a20; /* slightly lifted teal */
+  --border: #12303a; /* teal border */
+
+  --text: #cfe9e7; /* cool cyan-white */
+  --muted: #6f8f94; /* desaturated teal-gray */
+
+  --green: #00d1b2; /* cyan-green (not pure neon) */
+  --red: #ff5c5c; /* softer than pure red */
+
+  --accent: #1fc7d4; /* cyan highlight (tabs, active) */
 }
 
 body {
-  font-family: "Courier New", Courier, monospace;
+  background: var(--bg);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px; /* tighter like HL */
+  padding: 12px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  color: var(--muted);
+  font-weight: 500;
+  padding: 6px;
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 6px;
+  border-bottom: 1px solid #081418; /* teal-tinted subtle line */
+}
+
+.pos {
+  color: var(--green);
+  /* remove neon glow → HL is flat */
+  text-shadow: none;
+}
+
+.neg {
+  color: var(--red);
+  text-shadow: none;
+}
+
+.btn {
+  background: #0c1f26; /* teal tint */
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background: #0f2a33;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.nav {
+  display: inline-flex;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px; /* tighter */
+  padding: 2px;
+  margin-bottom: 10px;
+}
+
+.nav button {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: inherit;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nav button:hover {
+  color: var(--text);
+}
+
+.nav button.active {
+  background: #0f2a33;
+  color: var(--accent); /* cyan, not white */
+  box-shadow: 0 0 0 1px #1c3a44 inset;
 }
