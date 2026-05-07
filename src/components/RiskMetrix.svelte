@@ -106,9 +106,10 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={"Relative strength score vs market average"}
-              >Strength Index</span
+              use:tooltip={"Strength Index: Asset performance rank vs market average (0.00 is average)"}
             >
+              Strength Index
+            </span>
             <span class="value {r.score >= 0 ? 'text-green' : 'text-red'}"
               >{r.score.toFixed(2)}</span
             >
@@ -117,8 +118,8 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={"Relative growth rate based vs market average"}
-              >Growth Rate</span
+              use:tooltip={"Relative %: Asset performance compared to the total market average"}
+              >Relative %</span
             >
             <span class="value {r.rate >= 0 ? 'text-green' : 'text-red'}"
               >{r.rate > 0 ? "+" : ""}{r.rate.toFixed(2)}%</span
@@ -128,8 +129,10 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={"Price if relative growth was zero"}>Base Price</span
+              use:tooltip={"Relative Zero: The price this asset would be at if it had moved exactly with the market average"}
             >
+              Relative Zero
+            </span>
             <span class="value text-purple"
               >${formatPrice(r.stats.base_price)}</span
             >
@@ -156,8 +159,8 @@
           </div>
           <div class="stat-row">
             <span
-              class="label help -orange"
-              use:tooltip={"Average daily price movement (True Range)"}
+              class="label help"
+              use:tooltip={"Realized Volatility: Average daily price swing (High-to-Low) over 30 days"}
             >
               Volatility
             </span>
