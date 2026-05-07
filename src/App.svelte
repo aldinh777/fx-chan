@@ -1,6 +1,4 @@
 <script lang="ts">
-  import Crypto from "./components/Crypto.svelte";
-
   import { load, save } from "./lib/storage";
   import { rate, buildRanking, type PricePoint } from "./lib/market";
 
@@ -8,6 +6,8 @@
     fetchHyperliquidCoin,
     fetchAll as fetchAllCrypto,
   } from "./lib/fetchers/hyperliquid";
+  import CryptoMarkets from "./components/CryptoMarkets.svelte";
+  import RelativeStrength from "./components/RelativeStrength.svelte";
 
   const cryptoCoins = [
     "btc",
@@ -26,11 +26,12 @@
 
   let cryptoData: PricePoint[] = $state(load("crypto"));
 
-  let cryptoSorted = $derived(
+  let sorted = $derived(
     [...cryptoData].sort((a, b) => rate(b.t1, b.t0) - rate(a.t1, a.t0)),
   );
 
-  let cryptoRanking = $derived(buildRanking(cryptoData));
+  let base = $state("usdc");
+  let ranking = $derived(buildRanking(cryptoData));
 
   async function updateCrypto() {
     cryptoData = await fetchAllCrypto(cryptoCoins, fetchHyperliquidCoin);
@@ -38,8 +39,6 @@
   }
 </script>
 
-<Crypto
-  sorted={cryptoSorted}
-  ranking={cryptoRanking}
-  updateAll={updateCrypto}
-/>
+<CryptoMarkets {sorted} {base} updateAll={updateCrypto} />
+
+<RelativeStrength {ranking} bind:base />
