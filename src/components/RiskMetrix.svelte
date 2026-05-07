@@ -23,11 +23,43 @@
     // Clamp the value between 0% and 100% just in case of weird wick data
     return Math.max(0, Math.min(100, percentage));
   }
+
+  // Tooltip Action
+  function tooltip(node: HTMLElement, text: string) {
+    let tooltipEl: HTMLDivElement;
+
+    function mouseOver() {
+      tooltipEl = document.createElement("div");
+      tooltipEl.textContent = text;
+      tooltipEl.className = "tooltip-popup";
+      document.body.appendChild(tooltipEl);
+
+      const rect = node.getBoundingClientRect();
+      tooltipEl.style.left = `${rect.left + rect.width / 2}px`;
+      tooltipEl.style.top = `${rect.top - 10}px`;
+    }
+
+    function mouseOut() {
+      if (tooltipEl) {
+        tooltipEl.remove();
+      }
+    }
+
+    node.addEventListener("mouseover", mouseOver);
+    node.addEventListener("mouseout", mouseOut);
+
+    return {
+      destroy() {
+        node.removeEventListener("mouseover", mouseOver);
+        node.removeEventListener("mouseout", mouseOut);
+      },
+    };
+  }
 </script>
 
 <div class="panel" style="margin-top: 10px;">
   <div class="header">
-    <strong>PRICE ACTION & RISK (30D)</strong>
+    <strong>RELATIVE INDEX &amp; RISK METRIX (30D)</strong>
   </div>
 
   <div class="metrics-grid">
@@ -41,7 +73,7 @@
           >
             {r.symbol}
           </button>
-          <div class="primary-price">
+          <div class="primary-price {r.rate >= 0 ? 'text-green' : 'text-red'}">
             ${formatPrice(r.current)}
           </div>
         </div>
@@ -72,36 +104,55 @@
         <!-- Card Body: Dense Stats List -->
         <div class="card-body">
           <div class="stat-row">
-            <span class="label">Strength Index</span>
-            <span class="value {r.score >= 0 ? 'text-green' : 'text-red'}">
-              {r.score.toFixed(2)}
-            </span>
+            <span
+              class="label help"
+              use:tooltip={"Relative strength score vs market average"}
+              >Strength Index</span
+            >
+            <span class="value {r.score >= 0 ? 'text-green' : 'text-red'}"
+              >{r.score.toFixed(2)}</span
+            >
           </div>
 
           <div class="stat-row">
-            <span class="label">Growth Rate</span>
-            <span class="value {r.rate >= 0 ? 'text-green' : 'text-red'}">
-              {r.rate > 0 ? "+" : ""}{r.rate.toFixed(2)}%
-            </span>
+            <span
+              class="label help"
+              use:tooltip={"Relative growth rate based vs market average"}
+              >Growth Rate</span
+            >
+            <span class="value {r.rate >= 0 ? 'text-green' : 'text-red'}"
+              >{r.rate > 0 ? "+" : ""}{r.rate.toFixed(2)}%</span
+            >
           </div>
 
           <div class="stat-row">
-            <span class="label">Average (30D)</span>
-            <span class="value text-muted">${formatPrice(r.stats.avg)}</span>
-          </div>
-
-          <div class="stat-row">
-            <span class="label">Baseline Price</span>
+            <span
+              class="label help"
+              use:tooltip={"Price if relative growth was zero"}>Base Price</span
+            >
             <span class="value text-purple"
               >${formatPrice(r.stats.baseline)}</span
             >
           </div>
 
           <div class="stat-row">
-            <span class="label">Max Drawdown</span>
-            <span class="value badge-dd">
-              -{(r.stats.max_drawdown * 100).toFixed(2)}%
-            </span>
+            <span
+              class="label help"
+              use:tooltip={"Simple moving average of the last 30 daily closes"}
+              >Average Price</span
+            >
+            <span class="value text-muted">${formatPrice(r.stats.avg)}</span>
+          </div>
+
+          <div class="stat-row">
+            <span
+              class="label help"
+              use:tooltip={"Largest peak-to-trough drop in the last 30 days"}
+              >Max Drawdown</span
+            >
+            <span class="value badge-dd"
+              >-{(r.stats.max_drawdown * 100).toFixed(2)}%</span
+            >
           </div>
         </div>
       </div>
@@ -178,10 +229,10 @@
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--green));
+    background: var(--accent);
     border-radius: 4px;
     transition: width 0.4s ease-out;
-    box-shadow: 0 0 8px var(--green); /* Cyan-green glow */
+    box-shadow: 0 0 8px var(--green);
   }
 
   /* Card Body (Stats List) */
@@ -209,10 +260,10 @@
 
   /* Text Utility Classes */
   .text-green {
-    color: #22c55e;
+    color: var(--green);
   }
   .text-red {
-    color: #ff565b;
+    color: var(--red);
   }
   .text-purple {
     color: #a855f7;
@@ -229,5 +280,30 @@
     border-radius: 4px;
     font-weight: bold;
     font-size: 0.85em;
+  }
+
+  /* Style for labels that have help text */
+  .help {
+    cursor: help;
+    text-decoration: underline dotted var(--muted);
+    text-underline-offset: 3px;
+  }
+
+  /* Style for the actual floating popup */
+  :global(.tooltip-popup) {
+    position: fixed;
+    padding: 6px 10px;
+    background: var(--panel);
+    border: 1px solid var(--accent);
+    color: var(--text);
+    font-size: 0.75rem;
+    border-radius: 4px;
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+    white-space: nowrap;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    /* Subtle glow to match neon theme */
+    filter: drop-shadow(0 0 2px var(--accent));
   }
 </style>

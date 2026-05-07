@@ -64,27 +64,50 @@
     <thead>
       <tr>
         <th>PAIR</th>
-        <th>NOW</th>
-        <th>OLD</th>
-        <th>30D</th>
+        <th>CURRENT</th>
+        <th>PREVIOUS</th>
+        <th>30D RETURN</th>
       </tr>
     </thead>
     <tbody>
       {#each computed as item}
+        {@const currentRate = rate(item.c.t1, item.c.t0)}
         <tr>
           <td>{item.c.pair}</td>
           <td class="price-cell">
-            {item.c.common}<span class="diff-highlight">{item.c.t1Diff}</span>
+            {item.c.common}<span
+              class="diff-highlight"
+              class:text-green={currentRate >= 0}
+              class:text-red={currentRate < 0}>{item.c.t1Diff}</span
+            >
           </td>
           <td class="price-cell">
-            {item.c.common}<span class="diff-highlight">{item.c.t0Diff}</span>
+            {item.c.common}<span
+              class="diff-highlight"
+              class:text-green={currentRate >= 0}
+              class:text-red={currentRate < 0}>{item.c.t0Diff}</span
+            >
           </td>
-          <td class={rate(item.c.t1, item.c.t0) >= 0 ? "pos" : "neg"}>
-            {rate(item.c.t1, item.c.t0) >= 0 ? "↑" : "↓"}
-            {Math.abs(rate(item.c.t1, item.c.t0)).toFixed(2)}%
+          <td class={currentRate >= 0 ? "pos" : "neg"}>
+            {currentRate >= 0 ? "↑" : "↓"}
+            {Math.abs(currentRate).toFixed(2)}%
           </td>
         </tr>
       {/each}
     </tbody>
   </table>
 </div>
+
+<style>
+  .diff-highlight {
+    font-weight: bold;
+  }
+
+  .text-green {
+    color: var(--green);
+  }
+
+  .text-red {
+    color: var(--red);
+  }
+</style>
