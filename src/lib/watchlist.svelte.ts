@@ -1,12 +1,12 @@
 import { load } from "./storage"; // Import the load function
 
-export type CryptoItem = {
+export interface CryptoItem {
   id: string;
   symbol: string;
   visible: boolean;
   weight: number;
   confidence: number;
-};
+}
 
 const defaultCoins = [
   "btc",
@@ -24,7 +24,7 @@ const defaultCoins = [
 ];
 
 const defaultItems = defaultCoins.map((coin) => ({
-  id: crypto.randomUUID(),
+  id: coin,
   symbol: coin.toUpperCase(),
   visible: true,
   weight: 1,

@@ -1,5 +1,10 @@
 <script lang="ts">
-  import { buildRanking, rate, type PricePoint } from "./lib/market";
+  import {
+    buildRanking,
+    rate,
+    type PricePoint,
+    type WeightedPoint,
+  } from "./lib/market";
   import { load, save } from "./lib/storage";
 
   import {
@@ -29,13 +34,24 @@
     save("watchlist", watchlist.items);
   });
 
-  let visibleCryptoData = $derived(
-    cryptoData.filter((point) => {
-      const watchItem = watchlist.items.find(
-        (item) => item.symbol.toLowerCase() === point.coin.toLowerCase(),
-      );
-      return watchItem ? watchItem.visible : true;
-    }),
+  let visibleCryptoData: WeightedPoint[] = $derived(
+    cryptoData
+      .filter((point) => {
+        const watchItem = watchlist.items.find(
+          (item) => item.symbol.toLowerCase() === point.coin.toLowerCase(),
+        );
+        return watchItem ? watchItem.visible : true;
+      })
+      .map((point) => {
+        const watchItem = watchlist.items.find(
+          (item) => item.symbol.toLowerCase() === point.coin.toLowerCase(),
+        );
+        return {
+          ...point,
+          weight: watchItem?.weight ?? 1,
+          confidence: watchItem?.confidence ?? 1,
+        };
+      }),
   );
 
   let sorted = $derived(
