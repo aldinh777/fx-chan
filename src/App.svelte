@@ -38,7 +38,6 @@
   }
 </script>
 
-<!-- VIEW -->
 <Crypto
   sorted={cryptoSorted}
   ranking={cryptoRanking}

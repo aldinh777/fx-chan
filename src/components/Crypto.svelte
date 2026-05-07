@@ -155,11 +155,14 @@
         style="flex-grow: 1;"
       >
         {isUpdating ? "UPDATING..." : "UPDATE"}
+        {#if isUpdating}
+          <div class="loading-bar"></div>
+        {/if}
       </button>
     </div>
   </div>
 
-  <table class="table" style="width: 100%;">
+  <table class="table market-table" style="width: 100%;">
     <thead>
       <tr>
         <th>PAIR</th>
@@ -194,7 +197,7 @@
     <strong>RELATIVE STRENGTH</strong>
   </div>
 
-  <table class="table" style="width: 100%;">
+  <table class="table strength-table" style="width: 100%;">
     <thead>
       <tr>
         <th>ASSET</th>
@@ -205,7 +208,7 @@
 
     <tbody>
       {#each ranking as r}
-        <tr class="strength-row">
+        <tr>
           <td>
             <button
               class="btn"
