@@ -8,10 +8,10 @@
   } from "./lib/fetchers/hyperliquid";
 
   import CryptoMarkets from "./components/CryptoMarkets.svelte";
-  import RelativeStrength from "./components/RelativeStrength.svelte";
   import Watchlist from "./components/Watchlist.svelte";
 
   import { watchlist } from "./lib/watchlist.svelte";
+  import RiskMetrix from "./components/RiskMetrix.svelte";
 
   let cryptoData: PricePoint[] = $state(load("crypto", []));
   let base = $state("usdc");
@@ -68,7 +68,7 @@
 <main class="content-area">
   {#if activeTab === "dashboard"}
     <CryptoMarkets {sorted} {base} updateAll={updateCrypto} />
-    <RelativeStrength {ranking} bind:base />
+    <RiskMetrix {ranking} bind:base />
   {:else if activeTab === "watchlist"}
     <Watchlist />
   {/if}
@@ -79,14 +79,14 @@
     display: flex;
     gap: 16px;
     margin-bottom: 20px;
-    border-bottom: 1px solid var(--border-color, #444);
+    border-bottom: 1px solid var(--border);
     padding-bottom: 8px;
   }
 
   .nav-item {
     background: none;
     border: none;
-    color: var(--text-muted, #888);
+    color: var(--muted);
     font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
@@ -96,11 +96,11 @@
   }
 
   .nav-item:hover {
-    color: var(--text-color, #ccc);
+    color: var(--text);
   }
 
   .nav-item.active {
-    color: var(--text-active, #fff);
+    color: var(--text);
   }
 
   /* Animated underline for the active tab */
@@ -111,7 +111,7 @@
     left: 0;
     width: 100%;
     height: 2px;
-    background-color: var(--accent-color, #007bff);
+    background-color: var(--accent);
   }
 
   .content-area {

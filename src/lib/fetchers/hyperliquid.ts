@@ -9,8 +9,6 @@ export async function fetchHyperliquidCoin(
 ): Promise<PricePoint | null> {
   try {
     const now = Date.now();
-
-    // Extract the symbol string from the CryptoItem object
     const symbolString = coin.symbol;
 
     const res = await fetch(API, {
@@ -19,7 +17,7 @@ export async function fetchHyperliquidCoin(
       body: JSON.stringify({
         type: "candleSnapshot",
         req: {
-          coin: symbolString.toUpperCase(), // Use the extracted string here
+          coin: symbolString.toUpperCase(),
           interval: "1d",
           startTime: now - 30 * DAY,
           endTime: now,
@@ -36,11 +34,46 @@ export async function fetchHyperliquidCoin(
 
     if (!t0 || !t1) return null;
 
+    // --- Calculate Drawdown, High, Low, and Avg ---
+    let peak = 0;
+    let max_drawdown = 0;
+    let high = -Infinity;
+    let low = Infinity;
+    let sum = 0;
+    let count = 0;
+
+    for (const candle of json) {
+      const h = Number(candle.h || candle.c);
+      const l = Number(candle.l || candle.c);
+      const c = Number(candle.c);
+
+      // Max Drawdown Logic
+      if (h > peak) peak = h;
+      if (peak > 0) {
+        const drawdown = (peak - l) / peak;
+        if (drawdown > max_drawdown) max_drawdown = drawdown;
+      }
+
+      // High, Low, Avg Logic
+      if (h > high) high = h;
+      if (l < low) low = l;
+      sum += c;
+      count++;
+    }
+
+    const avg = count > 0 ? sum / count : 0;
+
     return {
       base: "usdc",
-      coin: symbolString.toLowerCase(), // Return just the string for the PricePoint
+      coin: symbolString.toLowerCase(),
       t0,
       t1,
+      stats: {
+        max_drawdown,
+        high,
+        low,
+        avg,
+      },
     };
   } catch {
     return null;

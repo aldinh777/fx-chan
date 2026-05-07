@@ -1,8 +1,25 @@
+export interface PriceStats {
+  max_drawdown: number;
+  high: number;
+  low: number;
+  avg: number;
+  baseline?: number;
+}
+
 export interface PricePoint {
   base: string;
   coin: string;
   t0: number;
   t1: number;
+  stats: PriceStats;
+}
+
+export interface AssetRanking {
+  symbol: string;
+  current: number;
+  score: number;
+  rate: number;
+  stats: PriceStats;
 }
 
 export const rate = (t1: number, t0: number) => (t1 / t0) * 100 - 100;
@@ -31,23 +48,34 @@ export function baseLogRates(data: PricePoint[]) {
   return data.map((d) => logRate(d.t1, d.t0));
 }
 
-export function buildRanking(data: PricePoint[]) {
+export function buildRanking(data: PricePoint[]): AssetRanking[] {
   const allReturns = baseLogRates(data);
   const marketAvg = avg(allReturns);
 
   return [
-    ...data.map((d) => {
+    ...data.map((d): AssetRanking => {
       const score = logRate(d.t1, d.t0) - marketAvg;
+      const rate = (Math.exp(score / 100) - 1) * 100; // The standard percentage relative rate
       return {
+        current: d.t1,
         symbol: d.coin.toUpperCase(),
+        rate,
         score, // The log-based relative strength
-        rate: (Math.exp(score / 100) - 1) * 100, // The standard percentage relative rate
+        stats: { ...d.stats, baseline: d.t1 / (1 + rate / 100) },
       };
     }),
     {
       symbol: "USDC",
+      current: 1,
       score: 0 - marketAvg,
       rate: (Math.exp((0 - marketAvg) / 100) - 1) * 100,
-    },
-  ].sort((a, b) => b.score - a.score);
+      stats: {
+        max_drawdown: 0,
+        high: 1,
+        low: 1,
+        avg: 1,
+        baseline: 1,
+      } as PriceStats,
+    } as AssetRanking,
+  ].sort((a: AssetRanking, b: AssetRanking) => b.score - a.score);
 }

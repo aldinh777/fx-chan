@@ -138,8 +138,8 @@
     flex-grow: 1;
     padding: 8px 12px;
     border-radius: 4px;
-    border: 1px solid var(--border-color, #ccc);
-    background: var(--bg-color, transparent);
+    border: 1px solid var(--border);
+    background: var(--bg);
     color: inherit;
   }
 
@@ -177,7 +177,7 @@
   }
 
   .badge.ignored {
-    background-color: #ff565b;
+    background-color: var(--red);
   }
   .action-buttons {
     display: flex;
@@ -186,13 +186,13 @@
   }
 
   .btn-danger {
-    background-color: #ff4d4d;
+    background-color: var(--red);
     color: white;
-    border-color: #ff4d4d;
+    border-color: var(--red);
   }
 
   .btn-danger:hover {
-    background-color: #ff3333;
+    background-color: #ef2323;
   }
 
   .empty-state {
