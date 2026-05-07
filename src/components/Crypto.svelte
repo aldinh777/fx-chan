@@ -80,8 +80,36 @@
     const mapped = sorted.map((row) => {
       const c = convert(row);
 
-      const t1Str = c.t1.toFixed(9);
-      const t0Str = c.t0.toFixed(9);
+      const maxVal = Math.max(Math.abs(c.t1), Math.abs(c.t0));
+      let decimals = 9;
+
+      if (maxVal >= 10) {
+        decimals = 2;
+      } else if (maxVal >= 1) {
+        decimals = 4;
+      } else {
+        decimals = 9;
+      }
+
+      let t1Str = c.t1.toFixed(decimals);
+      let t0Str = c.t0.toFixed(decimals);
+
+      let trimCount = 0;
+      while (
+        trimCount < decimals &&
+        t1Str[t1Str.length - 1 - trimCount] === "0" &&
+        t0Str[t0Str.length - 1 - trimCount] === "0"
+      ) {
+        trimCount++;
+      }
+
+      if (trimCount > 0) {
+        t1Str = t1Str.slice(0, -trimCount);
+        t0Str = t0Str.slice(0, -trimCount);
+      }
+
+      if (t1Str.endsWith(".")) t1Str = t1Str.slice(0, -1);
+      if (t0Str.endsWith(".")) t0Str = t0Str.slice(0, -1);
 
       let i = 0;
       while (i < t1Str.length && i < t0Str.length && t1Str[i] === t0Str[i]) {
@@ -113,7 +141,9 @@
   <div class="header">
     <strong>CRYPTO MARKETS</strong>
 
-    <div style="display:flex; gap:6px;">
+    <div
+      style="display:flex; gap:6px; width: 100%; justify-content: space-between;"
+    >
       <button class="btn" onclick={toggleInvert}>
         {inverted ? "NORMAL" : "INVERT"}
       </button>
@@ -122,23 +152,20 @@
         class="btn update-btn"
         onclick={handleUpdate}
         disabled={isUpdating}
+        style="flex-grow: 1;"
       >
-        {isUpdating ? "UPDATING..." : "UPDATE CRYPTO"}
-        {#if isUpdating}
-          <div class="loading-bar"></div>
-        {/if}
+        {isUpdating ? "UPDATING..." : "UPDATE"}
       </button>
     </div>
   </div>
 
-  <table class="table">
+  <table class="table" style="width: 100%;">
     <thead>
       <tr>
         <th>PAIR</th>
         <th>NOW</th>
         <th>OLD</th>
         <th>30D</th>
-        <th></th>
       </tr>
     </thead>
 
@@ -146,16 +173,15 @@
       {#each computed as item}
         <tr>
           <td>{item.c.pair}</td>
-
           <td class="price-cell">
             {item.c.common}<span class="diff-highlight">{item.c.t1Diff}</span>
           </td>
           <td class="price-cell">
             {item.c.common}<span class="diff-highlight">{item.c.t0Diff}</span>
           </td>
-
           <td class={rate(item.c.t1, item.c.t0) >= 0 ? "pos" : "neg"}>
-            {rate(item.c.t1, item.c.t0).toFixed(2)}%
+            {rate(item.c.t1, item.c.t0) >= 0 ? "↑" : "↓"}
+            {Math.abs(rate(item.c.t1, item.c.t0)).toFixed(2)}%
           </td>
         </tr>
       {/each}
@@ -168,31 +194,31 @@
     <strong>RELATIVE STRENGTH</strong>
   </div>
 
-  <table class="table">
+  <table class="table" style="width: 100%;">
     <thead>
       <tr>
         <th>ASSET</th>
-        <th>LOG SCORE</th>
+        <th>LOG</th>
         <th>RATE</th>
       </tr>
     </thead>
 
     <tbody>
       {#each ranking as r}
-        <tr>
+        <tr class="strength-row">
           <td>
-            <button class="btn" onclick={() => setBase(r.symbol)}>
+            <button
+              class="btn"
+              style="width:100%"
+              onclick={() => setBase(r.symbol)}
+            >
               {r.symbol}
             </button>
           </td>
-
-          <!-- Logarithmic Score -->
-          <td class={r.score >= 0 ? "pos" : "neg"}>
+          <td class={r.score >= 0 ? "pos" : "neg"} style="text-align: center;">
             {r.score.toFixed(2)}
           </td>
-
-          <!-- Standard Percentage Rate -->
-          <td class={r.rate >= 0 ? "pos" : "neg"}>
+          <td class={r.rate >= 0 ? "pos" : "neg"} style="text-align: right;">
             {r.rate.toFixed(2)}%
           </td>
         </tr>
@@ -200,6 +226,3 @@
     </tbody>
   </table>
 </div>
-
-<style>
-</style>
