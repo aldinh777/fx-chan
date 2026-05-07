@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { AssetRanking } from "../lib/market";
+  import CryptoIcon from "./CryptoIcon.svelte";
   import "./RiskMetrix.css";
 
   interface TimeFrame {
@@ -88,7 +89,7 @@
 
 <div class="panel" style="margin-top: 10px;">
   <div class="header">
-    <strong>COOL STATISTICS ({timeframe.label}D)</strong>
+    <strong>COOL STATISTICS ({timeframe.label})</strong>
   </div>
 
   <div class="metrics-grid">
@@ -100,6 +101,7 @@
             class="btn asset-btn"
             onclick={() => (base = r.symbol.toLowerCase())}
           >
+            <CryptoIcon symbol={r.symbol} size={20} />
             {r.symbol}
           </button>
           <div class="primary-price {r.rate >= 0 ? 'text-green' : 'text-red'}">
@@ -244,3 +246,15 @@
     {/each}
   </div>
 </div>
+
+<style>
+  .asset-btn {
+    display: inline-flex; /* Use inline-flex so it doesn't stretch to 100% width */
+    align-items: center; /* This is the magic line for vertical centering */
+    gap: 8px; /* This handles the spacing between the icon and text */
+
+    font-weight: bold;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+  }
+</style>

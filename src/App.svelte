@@ -14,6 +14,7 @@
 
   import { ensureVersionUpdate } from "./lib/version-util";
   import { watchlist } from "./lib/watchlist.svelte";
+  import CryptoIcon from "./components/CryptoIcon.svelte";
 
   ensureVersionUpdate();
 
