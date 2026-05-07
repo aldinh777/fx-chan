@@ -6,6 +6,8 @@ const DAY = 24 * 60 * 60 * 1000;
 
 export async function fetchHyperliquidCoin(
   coin: CryptoItem,
+  days: number,
+  interval: string,
 ): Promise<PricePoint | null> {
   try {
     const now = Date.now();
@@ -18,8 +20,8 @@ export async function fetchHyperliquidCoin(
         type: "candleSnapshot",
         req: {
           coin: symbolString.toUpperCase(),
-          interval: "1d",
-          startTime: now - 30 * DAY,
+          interval,
+          startTime: now - days * DAY,
           endTime: now,
         },
       }),
@@ -44,7 +46,7 @@ export async function fetchHyperliquidCoin(
     let count = 0;
     let prevClose = t0;
     let totalVolatility = 0;
-    let totalVolAmount = 0;
+    let volume = 0;
 
     for (const candle of json) {
       const h = Number(candle.h || candle.c);
@@ -53,7 +55,7 @@ export async function fetchHyperliquidCoin(
       const v = Number(candle.v);
 
       // Volume Calculation
-      totalVolAmount += v;
+      volume += v * c;
 
       // Max Drawdown Logic
       if (h > peak) peak = h;
@@ -73,17 +75,16 @@ export async function fetchHyperliquidCoin(
       const gapUp = Math.abs(h - prevClose);
       const gapDown = Math.abs(l - prevClose);
       const trueRange = Math.max(range, gapUp, gapDown);
-      const volPercent = trueRange / c;
-      totalVolatility += volPercent;
+      const voltPercent = trueRange / c;
+      totalVolatility += voltPercent;
       prevClose = c;
     }
 
     const avg = count > 0 ? sum / count : 0;
     const volatility = totalVolatility / count;
 
-    const avgVolAmount = totalVolAmount / count;
-    const intensity = v1 / avgVolAmount;
-    const volume = v1 * t1;
+    const avgVolume = volume / count;
+    const intensity = (v1 * t1) / avgVolume;
 
     const absoluteGrowth = (t1 - t0) / t0;
     const sharpe = absoluteGrowth / (volatility + 0.0001);
@@ -109,11 +110,14 @@ export async function fetchHyperliquidCoin(
   }
 }
 
-export async function fetchAll(
+export async function fetchAllCrypto(
   coins: CryptoItem[],
-  fetcher: (c: CryptoItem) => Promise<PricePoint | null>,
+  days: number,
+  interval: string,
 ) {
-  const res = await Promise.all(coins.map(fetcher));
+  const res = await Promise.all(
+    coins.map((c) => fetchHyperliquidCoin(c, days, interval)),
+  );
 
   return res.filter(
     (x): x is PricePoint =>

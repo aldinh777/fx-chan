@@ -5,20 +5,9 @@
   export interface Props {
     points: PricePoint[];
     base: string;
-    updateAll(): void | Promise<void>;
   }
-  let { points, base, updateAll }: Props = $props();
+  let { points, base }: Props = $props();
 
-  let isUpdating = $state(false);
-
-  async function handleUpdate() {
-    isUpdating = true;
-    try {
-      await updateAll();
-    } finally {
-      isUpdating = false;
-    }
-  }
   let inverted = $state(false);
 
   interface Computed {
@@ -46,16 +35,6 @@
     >
       <button class="btn" onclick={() => (inverted = !inverted)}>
         {inverted ? "NORMAL" : "INVERT"}
-      </button>
-
-      <button
-        class="btn update-btn"
-        onclick={handleUpdate}
-        disabled={isUpdating}
-        style="flex-grow: 1;"
-      >
-        {isUpdating ? "UPDATING..." : "UPDATE"}
-        {#if isUpdating}<div class="loading-bar"></div>{/if}
       </button>
     </div>
   </div>

@@ -28,9 +28,13 @@
 
   // Tooltip Action
   function tooltip(node: HTMLElement, text: string) {
-    let tooltipEl: HTMLDivElement;
+    let tooltipEl: HTMLDivElement | null = null;
 
-    function mouseOver() {
+    function mouseEnter() {
+      if (tooltipEl) {
+        tooltipEl.remove();
+      }
+
       tooltipEl = document.createElement("div");
       tooltipEl.textContent = text;
       tooltipEl.className = "tooltip-popup";
@@ -41,19 +45,25 @@
       tooltipEl.style.top = `${rect.top - 10}px`;
     }
 
-    function mouseOut() {
+    function mouseLeave() {
       if (tooltipEl) {
         tooltipEl.remove();
+        tooltipEl = null;
       }
     }
 
-    node.addEventListener("mouseover", mouseOver);
-    node.addEventListener("mouseout", mouseOut);
+    node.addEventListener("mouseenter", mouseEnter);
+    node.addEventListener("mouseleave", mouseLeave);
 
     return {
+      update(newText: string) {
+        text = newText;
+        if (tooltipEl) tooltipEl.textContent = text;
+      },
       destroy() {
-        node.removeEventListener("mouseover", mouseOver);
-        node.removeEventListener("mouseout", mouseOut);
+        node.removeEventListener("mouseenter", mouseEnter);
+        node.removeEventListener("mouseleave", mouseLeave);
+        if (tooltipEl) tooltipEl.remove();
       },
     };
   }

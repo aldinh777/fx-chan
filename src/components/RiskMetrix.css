@@ -127,7 +127,7 @@
 }
 
 /* Style for the actual floating popup */
-:global(.tooltip-popup) {
+.tooltip-popup {
   position: fixed;
   padding: 6px 10px;
   background: var(--panel);
