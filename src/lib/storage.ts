@@ -1,13 +1,15 @@
-import type { PricePoint } from "./market";
-
-export function load(key: string): PricePoint[] {
+export function load<T>(key: string, orelse: T): T {
   try {
-    return JSON.parse(localStorage.getItem(key) || "[]");
+    const item = localStorage.getItem(key);
+    if (item === null) {
+      return orelse;
+    }
+    return JSON.parse(item) as T;
   } catch {
-    return [];
+    return orelse;
   }
 }
 
-export function save(key: string, data: PricePoint[]) {
+export function save<T>(key: string, data: T) {
   localStorage.setItem(key, JSON.stringify(data));
 }

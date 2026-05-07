@@ -1,44 +1,122 @@
 <script lang="ts">
+  import { buildRanking, rate, type PricePoint } from "./lib/market";
   import { load, save } from "./lib/storage";
-  import { rate, buildRanking, type PricePoint } from "./lib/market";
 
   import {
-    fetchHyperliquidCoin,
     fetchAll as fetchAllCrypto,
+    fetchHyperliquidCoin,
   } from "./lib/fetchers/hyperliquid";
+
   import CryptoMarkets from "./components/CryptoMarkets.svelte";
   import RelativeStrength from "./components/RelativeStrength.svelte";
+  import Watchlist from "./components/Watchlist.svelte";
 
-  const cryptoCoins = [
-    "btc",
-    "eth",
-    "sol",
-    "xrp",
-    "bnb",
-    "hype",
-    "mon",
-    "zec",
-    "xmr",
-    "sui",
-    "trx",
-    "ada",
-  ];
+  import { watchlist } from "./lib/watchlist.svelte";
 
-  let cryptoData: PricePoint[] = $state(load("crypto"));
+  let cryptoData: PricePoint[] = $state(load("crypto", []));
+  let base = $state("usdc");
 
-  let sorted = $derived(
-    [...cryptoData].sort((a, b) => rate(b.t1, b.t0) - rate(a.t1, a.t0)),
+  let activeTab = $state(load("activeTab", "dashboard"));
+
+  $effect(() => {
+    save("activeTab", activeTab);
+  });
+
+  $effect(() => {
+    save("watchlist", watchlist.items);
+  });
+
+  let visibleCryptoData = $derived(
+    cryptoData.filter((point) => {
+      const watchItem = watchlist.items.find(
+        (item) => item.symbol.toLowerCase() === point.coin.toLowerCase(),
+      );
+      return watchItem ? watchItem.visible : true;
+    }),
   );
 
-  let base = $state("usdc");
-  let ranking = $derived(buildRanking(cryptoData));
+  let sorted = $derived(
+    [...visibleCryptoData].sort((a, b) => rate(b.t1, b.t0) - rate(a.t1, a.t0)),
+  );
+
+  let ranking = $derived(buildRanking(visibleCryptoData));
 
   async function updateCrypto() {
-    cryptoData = await fetchAllCrypto(cryptoCoins, fetchHyperliquidCoin);
+    cryptoData = await fetchAllCrypto(watchlist.items, fetchHyperliquidCoin);
     save("crypto", cryptoData);
   }
 </script>
 
-<CryptoMarkets {sorted} {base} updateAll={updateCrypto} />
+<nav class="navbar">
+  <button
+    class="nav-item"
+    class:active={activeTab === "dashboard"}
+    onclick={() => (activeTab = "dashboard")}
+  >
+    DASHBOARD
+  </button>
 
-<RelativeStrength {ranking} bind:base />
+  <button
+    class="nav-item"
+    class:active={activeTab === "watchlist"}
+    onclick={() => (activeTab = "watchlist")}
+  >
+    WATCHLIST
+  </button>
+</nav>
+
+<main class="content-area">
+  {#if activeTab === "dashboard"}
+    <CryptoMarkets {sorted} {base} updateAll={updateCrypto} />
+    <RelativeStrength {ranking} bind:base />
+  {:else if activeTab === "watchlist"}
+    <Watchlist />
+  {/if}
+</main>
+
+<style>
+  .navbar {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color, #444);
+    padding-bottom: 8px;
+  }
+
+  .nav-item {
+    background: none;
+    border: none;
+    color: var(--text-muted, #888);
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 8px 4px;
+    position: relative;
+    transition: color 0.2s ease;
+  }
+
+  .nav-item:hover {
+    color: var(--text-color, #ccc);
+  }
+
+  .nav-item.active {
+    color: var(--text-active, #fff);
+  }
+
+  /* Animated underline for the active tab */
+  .nav-item.active::after {
+    content: "";
+    position: absolute;
+    bottom: -9px; /* Align with the navbar border */
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: var(--accent-color, #007bff);
+  }
+
+  .content-area {
+    display: flex;
+    flex-direction: column;
+    gap: 16px; /* Keeps your dashboard panels spaced nicely */
+  }
+</style>

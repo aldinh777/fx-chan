@@ -1,13 +1,17 @@
 import type { PricePoint } from "../market";
+import type { CryptoItem } from "../watchlist.svelte";
 
 const API = "https://api.hyperliquid.xyz/info";
 const DAY = 24 * 60 * 60 * 1000;
 
 export async function fetchHyperliquidCoin(
-  coin: string,
+  coin: CryptoItem,
 ): Promise<PricePoint | null> {
   try {
     const now = Date.now();
+
+    // Extract the symbol string from the CryptoItem object
+    const symbolString = coin.symbol;
 
     const res = await fetch(API, {
       method: "POST",
@@ -15,7 +19,7 @@ export async function fetchHyperliquidCoin(
       body: JSON.stringify({
         type: "candleSnapshot",
         req: {
-          coin: coin.toUpperCase(),
+          coin: symbolString.toUpperCase(), // Use the extracted string here
           interval: "1d",
           startTime: now - 30 * DAY,
           endTime: now,
@@ -33,8 +37,8 @@ export async function fetchHyperliquidCoin(
     if (!t0 || !t1) return null;
 
     return {
-      base: "usd",
-      coin,
+      base: "usdc",
+      coin: symbolString.toLowerCase(), // Return just the string for the PricePoint
       t0,
       t1,
     };
@@ -44,8 +48,8 @@ export async function fetchHyperliquidCoin(
 }
 
 export async function fetchAll(
-  coins: string[],
-  fetcher: (c: string) => Promise<PricePoint | null>,
+  coins: CryptoItem[],
+  fetcher: (c: CryptoItem) => Promise<PricePoint | null>,
 ) {
   const res = await Promise.all(coins.map(fetcher));
 
