@@ -1,6 +1,8 @@
 <script lang="ts">
   import type { AssetRanking } from "../lib/market";
 
+  import "./RiskMetrix.css";
+
   export interface Props {
     ranking: AssetRanking[];
     base: string;
@@ -59,7 +61,7 @@
 
 <div class="panel" style="margin-top: 10px;">
   <div class="header">
-    <strong>RELATIVE INDEX &amp; RISK METRIX (30D)</strong>
+    <strong>COOL STATISTICS (30D)</strong>
   </div>
 
   <div class="metrics-grid">
@@ -216,151 +218,3 @@
     {/each}
   </div>
 </div>
-
-<style>
-  /* Responsive Grid Setup */
-  .metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 16px;
-    margin-top: 16px;
-  }
-
-  /* Individual Card Styling */
-  .stat-card {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border, #333);
-    border-radius: 8px;
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-
-  /* Card Header */
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--border, #444);
-    padding-bottom: 8px;
-  }
-
-  .asset-btn {
-    font-weight: bold;
-    letter-spacing: 1px;
-    padding: 4px 12px;
-  }
-
-  .primary-price {
-    font-size: 1.2em;
-    font-weight: bold;
-  }
-
-  /* Range Bar Styles */
-  .range-container {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    margin-top: 4px;
-    margin-bottom: 4px;
-  }
-
-  .range-labels {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.85em;
-  }
-
-  .text-small {
-    font-size: 0.85em;
-  }
-
-  .progress-bar {
-    width: 100%;
-    height: 6px;
-    background-color: #333;
-    border-radius: 4px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: var(--accent);
-    border-radius: 4px;
-    transition: width 0.4s ease-out;
-    box-shadow: 0 0 8px var(--green);
-  }
-
-  /* Card Body (Stats List) */
-  .card-body {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    font-size: 0.9em;
-  }
-
-  .stat-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .label {
-    color: var(--muted, #888);
-    font-size: 0.9em;
-  }
-
-  .value {
-    font-weight: 500;
-  }
-
-  /* Text Utility Classes */
-  .text-green {
-    color: var(--green);
-  }
-  .text-red {
-    color: var(--red);
-  }
-  .text-purple {
-    color: #a855f7;
-  }
-  .text-muted {
-    color: #888;
-  }
-
-  /* Specific Drawdown Badge */
-  .badge-dd {
-    background-color: rgba(255, 86, 91, 0.15);
-    color: #ff565b;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-weight: bold;
-    font-size: 0.85em;
-  }
-
-  /* Style for labels that have help text */
-  .help {
-    cursor: help;
-    text-decoration: underline dotted var(--muted);
-    text-underline-offset: 3px;
-  }
-
-  /* Style for the actual floating popup */
-  :global(.tooltip-popup) {
-    position: fixed;
-    padding: 6px 10px;
-    background: var(--panel);
-    border: 1px solid var(--accent);
-    color: var(--text);
-    font-size: 0.75rem;
-    border-radius: 4px;
-    pointer-events: none;
-    transform: translate(-50%, -100%);
-    white-space: nowrap;
-    z-index: 1000;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-    /* Subtle glow to match neon theme */
-    filter: drop-shadow(0 0 2px var(--accent));
-  }
-</style>

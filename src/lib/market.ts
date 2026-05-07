@@ -29,6 +29,7 @@ export interface PricePoint {
 export interface WeightedPoint extends PricePoint {
   weight: number;
   confidence: number;
+  position: number;
 }
 
 export const rate = (t1: number, t0: number) => (t1 / t0) * 100 - 100;

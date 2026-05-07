@@ -1,7 +1,6 @@
 <script lang="ts">
   import {
     buildRanking,
-    rate,
     type PricePoint,
     type WeightedPoint,
   } from "./lib/market";
@@ -32,33 +31,40 @@
 
   $effect(() => {
     save("watchlist", watchlist.items);
+    save("watchlist_mode", watchlist.mode);
   });
 
-  let visibleCryptoData: WeightedPoint[] = $derived(
-    cryptoData
-      .filter((point) => {
-        const watchItem = watchlist.items.find(
-          (item) => item.symbol.toLowerCase() === point.coin.toLowerCase(),
-        );
-        return watchItem ? watchItem.visible : true;
-      })
-      .map((point) => {
-        const watchItem = watchlist.items.find(
-          (item) => item.symbol.toLowerCase() === point.coin.toLowerCase(),
-        );
-        return {
+  let points: WeightedPoint[] = $derived(
+    cryptoData.flatMap((point) => {
+      const watchItem = watchlist.items.find(
+        (item) => item.symbol.toLowerCase() === point.coin.toLowerCase(),
+      );
+
+      if (watchItem && !watchItem.visible) {
+        return [];
+      }
+
+      const rawWeight = watchItem?.weight ?? 1;
+      const positionQty = watchItem?.position ?? 0;
+      const confidence = watchItem?.confidence ?? 1;
+
+      const calculatedEffectiveWeight =
+        watchlist.mode === "position_size"
+          ? positionQty * point.t1 // Real USD Notional Value
+          : rawWeight; // Simulated USD Value
+
+      return [
+        {
           ...point,
-          weight: watchItem?.weight ?? 1,
-          confidence: watchItem?.confidence ?? 1,
-        };
-      }),
+          weight: calculatedEffectiveWeight, // Overwrite with the final calculated weight
+          confidence: confidence,
+          position: positionQty, // Still pass this if your UI wants to display it
+        },
+      ];
+    }),
   );
 
-  let sorted = $derived(
-    [...visibleCryptoData].sort((a, b) => rate(b.t1, b.t0) - rate(a.t1, a.t0)),
-  );
-
-  let ranking = $derived(buildRanking(visibleCryptoData));
+  let ranking = $derived(buildRanking(points));
 
   async function updateCrypto() {
     cryptoData = await fetchAllCrypto(watchlist.items, fetchHyperliquidCoin);
@@ -86,56 +92,9 @@
 
 <main class="content-area">
   {#if activeTab === "dashboard"}
-    <CryptoMarkets {sorted} {base} updateAll={updateCrypto} />
+    <CryptoMarkets {points} {base} updateAll={updateCrypto} />
     <RiskMetrix {ranking} bind:base />
   {:else if activeTab === "watchlist"}
     <Watchlist />
   {/if}
 </main>
-
-<style>
-  .navbar {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 8px;
-  }
-
-  .nav-item {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 1rem;
-    font-weight: bold;
-    cursor: pointer;
-    padding: 8px 4px;
-    position: relative;
-    transition: color 0.2s ease;
-  }
-
-  .nav-item:hover {
-    color: var(--text);
-  }
-
-  .nav-item.active {
-    color: var(--text);
-  }
-
-  /* Animated underline for the active tab */
-  .nav-item.active::after {
-    content: "";
-    position: absolute;
-    bottom: -9px; /* Align with the navbar border */
-    left: 0;
-    width: 100%;
-    height: 2px;
-    background-color: var(--accent);
-  }
-
-  .content-area {
-    display: flex;
-    flex-direction: column;
-    gap: 16px; /* Keeps your dashboard panels spaced nicely */
-  }
-</style>

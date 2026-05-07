@@ -1,13 +1,13 @@
 import { rate, type PricePoint } from "./market";
 
 export function getFormattedMarkets(
-  sorted: PricePoint[],
+  points: PricePoint[],
   base: string,
   inverted: boolean,
 ) {
-  const baseRow = sorted.find((r) => r.coin === base);
+  const baseRow = points.find((r) => r.coin === base);
 
-  const mapped = sorted.map((row) => {
+  const mapped = points.map((row) => {
     // 1. Convert Logic
     let c;
     if (row.coin === base && base !== "usdc") {

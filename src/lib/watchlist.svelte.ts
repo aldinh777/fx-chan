@@ -1,4 +1,4 @@
-import { load } from "./storage"; // Import the load function
+import { load, save } from "./storage"; // Import the load function
 
 export interface CryptoItem {
   id: string;
@@ -6,7 +6,10 @@ export interface CryptoItem {
   visible: boolean;
   weight: number;
   confidence: number;
+  position: number;
 }
+
+export type WeightMode = "target_weight" | "position_size";
 
 const defaultCoins = [
   "btc",
@@ -29,10 +32,12 @@ const defaultItems = defaultCoins.map((coin) => ({
   visible: true,
   weight: 1,
   confidence: 1,
+  position: 0,
 }));
 
 class WatchlistStore {
   items = $state<CryptoItem[]>(load("watchlist", defaultItems));
+  mode = $state<WeightMode>(load("watchlist_mode", "target_weight"));
 
   add(symbol: string): { success: boolean; message?: string } {
     const cleanSymbol = symbol.trim().toUpperCase();
@@ -53,6 +58,7 @@ class WatchlistStore {
       visible: true,
       weight: 1,
       confidence: 1,
+      position: 0,
     });
 
     return { success: true };
@@ -67,6 +73,11 @@ class WatchlistStore {
     if (item) {
       item.visible = !item.visible;
     }
+  }
+
+  toggleMode() {
+    this.mode =
+      this.mode === "target_weight" ? "position_size" : "target_weight";
   }
 }
 

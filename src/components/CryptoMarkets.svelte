@@ -3,11 +3,11 @@
   import { getFormattedMarkets } from "../lib/market-utils";
 
   export interface Props {
-    sorted: PricePoint[];
+    points: PricePoint[];
     base: string;
     updateAll(): void | Promise<void>;
   }
-  let { sorted, base, updateAll }: Props = $props();
+  let { points, base, updateAll }: Props = $props();
 
   let isUpdating = $state(false);
 
@@ -34,7 +34,7 @@
   }
 
   let computed: Computed[] = $derived(
-    getFormattedMarkets(sorted, base, inverted),
+    getFormattedMarkets(points, base, inverted),
   );
 </script>
 

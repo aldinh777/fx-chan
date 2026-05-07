@@ -1,5 +1,6 @@
 <script lang="ts">
   import { watchlist } from "../lib/watchlist.svelte";
+  import "./Watchlist.css";
 
   let newSymbol = $state("");
   let editingRows = $state<Record<string, boolean>>({});
@@ -30,11 +31,33 @@
     watchlist.remove(id);
     confirmDelete = null;
   }
+
+  function toggleMode() {
+    watchlist.toggleMode();
+  }
 </script>
 
 <div class="panel">
   <div class="header">
     <strong>MY WATCHLIST</strong>
+  </div>
+
+  <div
+    class="mode-toggle-bar"
+    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 8px;"
+  >
+    <span>
+      Current Mode: <strong
+        >{watchlist.mode === "target_weight"
+          ? "Target Weight"
+          : "Position Size"}</strong
+      >
+    </span>
+    <button class="btn" onclick={toggleMode}>
+      SWITCH TO {watchlist.mode === "target_weight"
+        ? "POSITION SIZE"
+        : "TARGET WEIGHT"}
+    </button>
   </div>
 
   <div class="controls">
@@ -69,21 +92,40 @@
 
         <!-- Card Body: Editable Metrics -->
         <div class="card-body">
-          <div class="metric">
-            <span class="metric-label">WEIGHT</span>
-            {#if editingRows[crypto.id]}
-              <input
-                type="number"
-                class="input small-input"
-                bind:value={crypto.weight}
-                min="0"
-                step="0.1"
-              />
-            {:else}
-              <span class="metric-value">{crypto.weight}</span>
-            {/if}
-          </div>
+          {#if watchlist.mode === "target_weight"}
+            <div class="metric">
+              <span class="metric-label">TARGET WEIGHT</span>
+              {#if editingRows[crypto.id]}
+                <input
+                  type="number"
+                  class="input small-input"
+                  bind:value={crypto.weight}
+                  min="0"
+                  step="0.1"
+                />
+              {:else}
+                <span class="metric-value">{crypto.weight}</span>
+              {/if}
+            </div>
+          {:else}
+            <div class="metric">
+              <span class="metric-label">HOLDINGS (QTY)</span>
+              {#if editingRows[crypto.id]}
+                <!-- Note: Step is much smaller here to accommodate token fractions -->
+                <input
+                  type="number"
+                  class="input small-input"
+                  bind:value={crypto.position}
+                  min="0"
+                  step="0.0001"
+                />
+              {:else}
+                <span class="metric-value">{crypto.position || 0}</span>
+              {/if}
+            </div>
+          {/if}
 
+          <!-- Confidence remains visible in both modes -->
           <div class="metric">
             <span class="metric-label">CONFIDENCE</span>
             {#if editingRows[crypto.id]}
@@ -143,172 +185,3 @@
     {/each}
   </div>
 </div>
-
-<style>
-  /* --- Panel & Controls --- */
-  .controls {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-  }
-
-  .input {
-    flex-grow: 1;
-    padding: 10px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: inherit;
-    font-size: 16px; /* Prevents auto-zoom on mobile */
-  }
-
-  /* --- Grid Layout --- */
-  .card-grid {
-    display: grid;
-    /* Automatically creates columns based on available width. Fits mobile perfectly. */
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-  }
-
-  .empty-state {
-    grid-column: 1 / -1;
-    text-align: center;
-    opacity: 0.5;
-    padding: 32px 0;
-  }
-
-  /* --- Card Design --- */
-  .card {
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.02); /* Slight contrast against panel */
-    transition: opacity 0.2s ease;
-    gap: 16px;
-  }
-
-  .hidden-card {
-    opacity: 0.4;
-  }
-
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    padding-bottom: 12px;
-  }
-
-  .asset-symbol {
-    font-size: 1.2rem;
-  }
-
-  .badge {
-    font-size: 0.7em;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-weight: bold;
-    text-transform: uppercase;
-  }
-
-  .badge.tracking {
-    background-color: #32756e;
-  }
-  .badge.ignored {
-    background-color: var(--red);
-  }
-
-  /* --- Card Body Metrics --- */
-  .card-body {
-    display: flex;
-    gap: 16px;
-  }
-
-  .metric {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  .metric-label {
-    font-size: 0.75rem;
-    font-weight: bold;
-    color: var(--muted);
-  }
-
-  .metric-value {
-    font-size: 1rem;
-    font-weight: 500;
-  }
-
-  .small-input {
-    width: 100%;
-    padding: 6px 8px;
-    text-align: left;
-  }
-
-  /* --- Card Actions --- */
-  .card-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: auto; /* Pushes buttons to the bottom if card heights vary */
-  }
-
-  .card-actions .btn {
-    flex: 1; /* Makes buttons equal width */
-    padding: 8px 0;
-    font-size: 0.85rem;
-  }
-
-  /* --- Confirmation Flow --- */
-  .confirm-mode {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    gap: 8px;
-  }
-
-  .confirm-text {
-    font-size: 0.9rem;
-    color: var(--red);
-    text-align: center;
-  }
-
-  .confirm-buttons {
-    display: flex;
-    width: 100%;
-    gap: 8px;
-  }
-
-  .confirm-buttons .btn {
-    flex: 1;
-  }
-
-  /* --- Button Styles --- */
-  .btn-danger {
-    background-color: var(--red);
-    color: white;
-    border: 1px solid var(--red);
-  }
-
-  .btn-cancel {
-    background-color: transparent;
-    border: 1px solid var(--border);
-    color: inherit;
-  }
-
-  .btn-danger-outline {
-    background: transparent;
-    color: var(--red);
-    border: 1px solid var(--red);
-  }
-
-  .btn-danger-outline:hover {
-    background: var(--red);
-    color: white;
-  }
-</style>
