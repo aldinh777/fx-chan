@@ -8,10 +8,13 @@
   } from "./lib/fetchers/hyperliquid";
 
   import CryptoMarkets from "./components/CryptoMarkets.svelte";
+  import RiskMetrix from "./components/RiskMetrix.svelte";
   import Watchlist from "./components/Watchlist.svelte";
 
+  import { ensureVersionUpdate } from "./lib/version-util";
   import { watchlist } from "./lib/watchlist.svelte";
-  import RiskMetrix from "./components/RiskMetrix.svelte";
+
+  ensureVersionUpdate();
 
   let cryptoData: PricePoint[] = $state(load("crypto", []));
   let base = $state("usdc");

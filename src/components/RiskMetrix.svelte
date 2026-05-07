@@ -131,14 +131,14 @@
               use:tooltip={"Price if relative growth was zero"}>Base Price</span
             >
             <span class="value text-purple"
-              >${formatPrice(r.stats.baseline)}</span
+              >${formatPrice(r.stats.base_price)}</span
             >
           </div>
 
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={"Simple moving average of the last 30 daily closes"}
+              use:tooltip={"Simple moving average of the daily closes"}
               >Average Price</span
             >
             <span class="value text-muted">${formatPrice(r.stats.avg)}</span>
@@ -147,12 +147,66 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={"Largest peak-to-trough drop in the last 30 days"}
+              use:tooltip={"Largest peak-to-trough price drop"}
               >Max Drawdown</span
             >
             <span class="value badge-dd"
               >-{(r.stats.max_drawdown * 100).toFixed(2)}%</span
             >
+          </div>
+          <div class="stat-row">
+            <span
+              class="label help -orange"
+              use:tooltip={"Average daily price movement (True Range)"}
+            >
+              Volatility
+            </span>
+            <span class="value text-purple"
+              >{(r.stats.volatility * 100).toFixed(2)}%</span
+            >
+          </div>
+
+          <div class="stat-row">
+            <span
+              class="label help"
+              use:tooltip={"Relative Volume (Current / Avg). > 1.0 means high activity."}
+            >
+              Vol Intensity
+            </span>
+            <span
+              class="value"
+              style="color: {r.stats.intensity > 1.5
+                ? 'var(--accent)'
+                : 'var(--muted)'}"
+            >
+              {r.stats.intensity.toFixed(2)}x
+            </span>
+          </div>
+
+          <div class="stat-row">
+            <span
+              class="label help"
+              use:tooltip={"Total USD value traded in 24h. High volume = High liquidity."}
+              >24h $ Vol</span
+            >
+            <span class="value text-muted">
+              ${(r.stats.volume / 1_000_000).toFixed(2)}M
+            </span>
+          </div>
+
+          <div class="stat-row">
+            <span
+              class="label help"
+              use:tooltip={"Risk-Adjusted Return. Higher means a smoother, safer uptrend."}
+            >
+              Sharpe Ratio
+            </span>
+            <span
+              class="value"
+              style="color: {r.stats.sharpe > 1 ? '#fcee0a' : 'var(--text)'}"
+            >
+              {r.stats.sharpe.toFixed(2)}
+            </span>
           </div>
         </div>
       </div>

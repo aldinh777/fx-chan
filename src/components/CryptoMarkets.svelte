@@ -64,9 +64,9 @@
     <thead>
       <tr>
         <th>PAIR</th>
-        <th>CURRENT</th>
-        <th>PREVIOUS</th>
-        <th>30D RETURN</th>
+        <th>NOW</th>
+        <th>OLD</th>
+        <th>30D</th>
       </tr>
     </thead>
     <tbody>

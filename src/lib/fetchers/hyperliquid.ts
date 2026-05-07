@@ -29,23 +29,31 @@ export async function fetchHyperliquidCoin(
 
     if (!Array.isArray(json) || json.length === 0) return null;
 
-    const t0 = Number(json[0]?.o);
+    const t0 = Number(json[0]?.c);
     const t1 = Number(json.at(-1)?.c);
+    const v1 = Number(json.at(-1)?.v);
 
     if (!t0 || !t1) return null;
 
-    // --- Calculate Drawdown, High, Low, and Avg ---
+    // --- Calculate Metrix
     let peak = 0;
     let max_drawdown = 0;
     let high = -Infinity;
     let low = Infinity;
     let sum = 0;
     let count = 0;
+    let prevClose = t0;
+    let totalVolatility = 0;
+    let totalVolAmount = 0;
 
     for (const candle of json) {
       const h = Number(candle.h || candle.c);
       const l = Number(candle.l || candle.c);
       const c = Number(candle.c);
+      const v = Number(candle.v);
+
+      // Volume Calculation
+      totalVolAmount += v;
 
       // Max Drawdown Logic
       if (h > peak) peak = h;
@@ -59,9 +67,26 @@ export async function fetchHyperliquidCoin(
       if (l < low) low = l;
       sum += c;
       count++;
+
+      // Volatility Logic
+      const range = h - l;
+      const gapUp = Math.abs(h - prevClose);
+      const gapDown = Math.abs(l - prevClose);
+      const trueRange = Math.max(range, gapUp, gapDown);
+      const volPercent = trueRange / c;
+      totalVolatility += volPercent;
+      prevClose = c;
     }
 
     const avg = count > 0 ? sum / count : 0;
+    const volatility = totalVolatility / count;
+
+    const avgVolAmount = totalVolAmount / count;
+    const intensity = v1 / avgVolAmount;
+    const volume = v1 * t1;
+
+    const absoluteGrowth = (t1 - t0) / t0;
+    const sharpe = absoluteGrowth / (volatility + 0.0001);
 
     return {
       base: "usdc",
@@ -73,6 +98,10 @@ export async function fetchHyperliquidCoin(
         high,
         low,
         avg,
+        volatility,
+        intensity,
+        volume,
+        sharpe,
       },
     };
   } catch {

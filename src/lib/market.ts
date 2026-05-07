@@ -3,7 +3,11 @@ export interface PriceStats {
   high: number;
   low: number;
   avg: number;
-  baseline?: number;
+  volatility: number;
+  intensity: number;
+  volume: number;
+  sharpe: number;
+  base_price?: number;
 }
 
 export interface PricePoint {
@@ -61,7 +65,7 @@ export function buildRanking(data: PricePoint[]): AssetRanking[] {
         symbol: d.coin.toUpperCase(),
         rate,
         score, // The log-based relative strength
-        stats: { ...d.stats, baseline: d.t1 / (1 + rate / 100) },
+        stats: { ...d.stats, base_price: d.t1 / (1 + rate / 100) },
       };
     }),
     {
@@ -74,7 +78,11 @@ export function buildRanking(data: PricePoint[]): AssetRanking[] {
         high: 1,
         low: 1,
         avg: 1,
-        baseline: 1,
+        base_price: 1,
+        volatility: 0,
+        intensity: 0,
+        volume: 0,
+        sharpe: 1,
       } as PriceStats,
     } as AssetRanking,
   ].sort((a: AssetRanking, b: AssetRanking) => b.score - a.score);
