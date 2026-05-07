@@ -146,7 +146,7 @@
 <main class="content-area">
   {#if activeTab === "dashboard"}
     <CryptoMarkets {points} {base} />
-    <RiskMetrix {ranking} bind:base />
+    <RiskMetrix {ranking} bind:base timeframe={selectedTimeframe} />
   {:else if activeTab === "watchlist"}
     <Watchlist />
   {/if}

@@ -1,14 +1,20 @@
 <script lang="ts">
   import type { AssetRanking } from "../lib/market";
-
   import "./RiskMetrix.css";
+
+  interface TimeFrame {
+    label: string;
+    days: number;
+    interval: string;
+  }
 
   export interface Props {
     ranking: AssetRanking[];
     base: string;
+    timeframe: TimeFrame;
   }
 
-  let { ranking, base = $bindable() }: Props = $props();
+  let { ranking, base = $bindable(), timeframe }: Props = $props();
 
   function formatPrice(val: number | undefined) {
     if (val === undefined) return "0.00";
@@ -18,15 +24,26 @@
     return val.toFixed(2);
   }
 
-  // Calculates how "full" the bar should be based on current price vs 30D range
+  const volumeFormatter = new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    compactDisplay: "short",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  function formatVolume(val: number | undefined) {
+    if (val === undefined || isNaN(val)) return "0.00";
+    return volumeFormatter.format(val);
+  }
+
+  // Calculates how "full" the bar should be based on current price vs dynamic range
   function getRangePercentage(current: number, low: number, high: number) {
-    if (high <= low) return 100; // Fallback to prevent division by zero
+    if (high <= low) return 100;
     const percentage = ((current - low) / (high - low)) * 100;
-    // Clamp the value between 0% and 100% just in case of weird wick data
     return Math.max(0, Math.min(100, percentage));
   }
 
-  // Tooltip Action
+  // Tooltip Action (Unchanged)
   function tooltip(node: HTMLElement, text: string) {
     let tooltipEl: HTMLDivElement | null = null;
 
@@ -71,7 +88,7 @@
 
 <div class="panel" style="margin-top: 10px;">
   <div class="header">
-    <strong>COOL STATISTICS (30D)</strong>
+    <strong>COOL STATISTICS ({timeframe.label}D)</strong>
   </div>
 
   <div class="metrics-grid">
@@ -101,7 +118,6 @@
             >
           </div>
           <div class="progress-bar">
-            <!-- The fill width is dynamically calculated! -->
             <div
               class="progress-fill"
               style="width: {getRangePercentage(
@@ -172,7 +188,7 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={"Realized Volatility: Average daily price swing (High-to-Low) over 30 days"}
+              use:tooltip={`Realized Volatility: Average price swing (High-to-Low) over the ${timeframe.label} period`}
             >
               Volatility
             </span>
@@ -201,11 +217,11 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={"Total USD value traded in 24h. High volume = High liquidity."}
-              >24h $ Vol</span
+              use:tooltip={`Total USD value traded over the ${timeframe.interval} period. High volume = High liquidity.`}
+              >{timeframe.interval} Volume</span
             >
             <span class="value text-muted">
-              ${(r.stats.volume / 1_000_000).toFixed(2)}M
+              ${formatVolume(r.stats.volume)}
             </span>
           </div>
 

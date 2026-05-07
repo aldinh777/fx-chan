@@ -101,7 +101,7 @@ export async function fetchHyperliquidCoin(
         avg,
         volatility,
         intensity,
-        volume,
+        volume: v1,
         sharpe,
       },
     };
