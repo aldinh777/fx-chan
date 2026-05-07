@@ -25,15 +25,29 @@ export function baseRates(data: PricePoint[]) {
   return data.map((d) => rate(d.t1, d.t0));
 }
 
-export function buildRanking(data: PricePoint[], coins: string[]) {
+export const logRate = (t1: number, t0: number) => Math.log(t1 / t0) * 100;
+
+export function baseLogRates(data: PricePoint[]) {
+  return data.map((d) => logRate(d.t1, d.t0));
+}
+
+export function buildRanking(data: PricePoint[]) {
+  const allReturns = baseLogRates(data);
+  const marketAvg = avg(allReturns);
+
   return [
-    ...coins.map((c) => ({
-      symbol: c.toUpperCase(),
-      score: avg(relativeRates(data, c)),
-    })),
+    ...data.map((d) => {
+      const score = logRate(d.t1, d.t0) - marketAvg;
+      return {
+        symbol: d.coin.toUpperCase(),
+        score, // The log-based relative strength
+        rate: (Math.exp(score / 100) - 1) * 100, // The standard percentage relative rate
+      };
+    }),
     {
-      symbol: "USD",
-      score: avg(baseRates(data)),
+      symbol: "USDC",
+      score: 0 - marketAvg,
+      rate: (Math.exp((0 - marketAvg) / 100) - 1) * 100,
     },
   ].sort((a, b) => b.score - a.score);
 }

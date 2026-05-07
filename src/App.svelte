@@ -30,7 +30,7 @@
     [...cryptoData].sort((a, b) => rate(b.t1, b.t0) - rate(a.t1, a.t0)),
   );
 
-  let cryptoRanking = $derived(buildRanking(cryptoData, cryptoCoins));
+  let cryptoRanking = $derived(buildRanking(cryptoData));
 
   async function updateCrypto() {
     cryptoData = await fetchAllCrypto(cryptoCoins, fetchHyperliquidCoin);

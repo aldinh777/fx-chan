@@ -7,11 +7,11 @@
     updateAll,
   }: {
     sorted: PricePoint[];
-    ranking: { symbol: string; score: number }[];
+    ranking: { symbol: string; score: number; rate: number }[];
     updateAll: () => void | Promise<void>;
   } = $props();
 
-  let base = $state("usd");
+  let base = $state("usdc");
   let inverted = $state(false);
   let isUpdating = $state(false);
 
@@ -29,13 +29,13 @@
   }
 
   function convert(row: PricePoint) {
-    if (row.coin === base && base !== "usd") {
+    if (row.coin === base && base !== "usdc") {
       return {
         t0: inverted ? row.t0 : 1 / row.t0,
         t1: inverted ? row.t1 : 1 / row.t1,
         pair: inverted
-          ? `${row.coin.toUpperCase()}/USD`
-          : `USD/${row.coin.toUpperCase()}`,
+          ? `${row.coin.toUpperCase()}/USDC`
+          : `USDC/${row.coin.toUpperCase()}`,
       };
     }
 
@@ -73,7 +73,6 @@
   }
 
   let computed = $derived.by(() => {
-    // explicit dependencies
     base;
     inverted;
     sorted;
@@ -81,11 +80,9 @@
     const mapped = sorted.map((row) => {
       const c = convert(row);
 
-      // Format both prices to 6 decimal places as strings
-      const t1Str = c.t1.toFixed(6);
-      const t0Str = c.t0.toFixed(6);
+      const t1Str = c.t1.toFixed(9);
+      const t0Str = c.t0.toFixed(9);
 
-      // Find the index where the two strings diverge
       let i = 0;
       while (i < t1Str.length && i < t0Str.length && t1Str[i] === t0Str[i]) {
         i++;
@@ -95,7 +92,6 @@
         row,
         c: {
           ...c,
-          // Split the strings at the divergence index
           common: t1Str.slice(0, i),
           t1Diff: t1Str.slice(i),
           t0Diff: t0Str.slice(i),
@@ -103,7 +99,6 @@
       };
     });
 
-    // Keep the list sorted dynamically based on the recalculated rate
     mapped.sort((a, b) => {
       const rateA = rate(a.c.t1, a.c.t0);
       const rateB = rate(b.c.t1, b.c.t0);
@@ -152,7 +147,6 @@
         <tr>
           <td>{item.c.pair}</td>
 
-          <!-- Render the common part normally, and highlight the differing part -->
           <td class="price-cell">
             {item.c.common}<span class="diff-highlight">{item.c.t1Diff}</span>
           </td>
@@ -178,7 +172,8 @@
     <thead>
       <tr>
         <th>ASSET</th>
-        <th>SCORE</th>
+        <th>LOG SCORE</th>
+        <th>RATE</th>
       </tr>
     </thead>
 
@@ -191,8 +186,14 @@
             </button>
           </td>
 
+          <!-- Logarithmic Score -->
           <td class={r.score >= 0 ? "pos" : "neg"}>
-            {r.score.toFixed(2)}%
+            {r.score.toFixed(2)}
+          </td>
+
+          <!-- Standard Percentage Rate -->
+          <td class={r.rate >= 0 ? "pos" : "neg"}>
+            {r.rate.toFixed(2)}%
           </td>
         </tr>
       {/each}
@@ -201,47 +202,4 @@
 </div>
 
 <style>
-  /* Loading Bar Styles */
-  .update-btn {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .loading-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    height: 3px;
-    background-color: currentColor;
-    opacity: 0.7;
-    animation: load-animation 1s infinite ease-in-out;
-  }
-
-  @keyframes load-animation {
-    0% {
-      width: 0%;
-      left: 0;
-    }
-    50% {
-      width: 100%;
-      left: 0;
-    }
-    100% {
-      width: 0%;
-      left: 100%;
-    }
-  }
-
-  /* Price Diff Highlight Styles */
-  .price-cell {
-    font-variant-numeric: tabular-nums; /* Keeps digits horizontally aligned */
-  }
-
-  .diff-highlight {
-    font-weight: 700;
-    color: #ffaa00; /* Choose an accent color that fits your theme */
-    /* Alternatively, you can use a subtle background: 
-       background-color: rgba(255, 170, 0, 0.2); 
-       border-radius: 2px; */
-  }
 </style>
