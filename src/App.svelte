@@ -36,11 +36,6 @@
     cryptoData = await fetchAllCrypto(cryptoCoins, fetchHyperliquidCoin);
     save("crypto", cryptoData);
   }
-
-  function removeCrypto(item: PricePoint) {
-    cryptoData = cryptoData.filter((d) => d !== item);
-    save("crypto", cryptoData);
-  }
 </script>
 
 <!-- VIEW -->
@@ -48,5 +43,4 @@
   sorted={cryptoSorted}
   ranking={cryptoRanking}
   updateAll={updateCrypto}
-  remove={removeCrypto}
 />
