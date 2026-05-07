@@ -32,7 +32,7 @@ export function buildRanking(data: PricePoint[], coins: string[]) {
       score: avg(relativeRates(data, c)),
     })),
     {
-      symbol: "USDT",
+      symbol: "USD",
       score: avg(baseRates(data)),
     },
   ].sort((a, b) => b.score - a.score);

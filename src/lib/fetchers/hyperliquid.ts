@@ -33,7 +33,7 @@ export async function fetchHyperliquidCoin(
     if (!t0 || !t1) return null;
 
     return {
-      base: "usdt",
+      base: "usd",
       coin,
       t0,
       t1,
