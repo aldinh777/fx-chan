@@ -18,36 +18,11 @@ export interface WeightedPoint extends PricePoint {
 }
 
 export function buildRanking(data: WeightedPoint[]): AssetRanking[] {
-  const usdc = {
-    base: "usdc",
-    coin: "usdc",
-    t0: 1,
-    t1: 1,
-    v1: 0,
-    weight: 1,
-    confidence: 1,
-    position: 0,
-    stats: {
-      max_drawdown: 0,
-      high: 1,
-      low: 1,
-      avg: 1,
-      base_price: 1,
-      volatility: 0,
-      intensity: 0,
-      volume: 0,
-      absolute_growth: 0,
-      sharpe: 1,
-    } as PriceStats,
-  } as WeightedPoint;
-
-  const withUsdc = [usdc, ...data];
-
-  return withUsdc.map((p) => {
+  return data.map((p) => {
     let weightedSum = 0;
     let totalWeight = 0;
 
-    for (const d of withUsdc) {
+    for (const d of data) {
       if (p.coin === d.coin) {
         continue;
       }
@@ -63,7 +38,8 @@ export function buildRanking(data: WeightedPoint[]): AssetRanking[] {
       }
     }
 
-    const score = (weightedSum / totalWeight) * p.confidence;
+    const score =
+      totalWeight > 0 ? (weightedSum / totalWeight) * p.confidence : 0;
     const rate = 100 * (Math.exp(score) - 1);
     const displayScore = 100 * score;
 

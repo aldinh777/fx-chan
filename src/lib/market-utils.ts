@@ -1,4 +1,4 @@
-import type { PricePoint } from "./market";
+import type { PricePoint, PriceStats } from "./market";
 import type { WeightedPoint } from "./ranking";
 
 import { rate } from "./market";
@@ -17,8 +17,31 @@ export interface Computed {
   };
 }
 
+const usdc = {
+  base: "usdc",
+  coin: "usdc",
+  t0: 1,
+  t1: 1,
+  v1: 0,
+  weight: 1,
+  confidence: 1,
+  position: 0,
+  stats: {
+    max_drawdown: 0,
+    high: 1,
+    low: 1,
+    avg: 1,
+    base_price: 1,
+    volatility: 0,
+    intensity: 0,
+    volume: 0,
+    absolute_growth: 0,
+    sharpe: 1,
+  } as PriceStats,
+} as WeightedPoint;
+
 export function weightPoints(data: PricePoint[]) {
-  return data.flatMap((point): WeightedPoint[] => {
+  return [usdc, ...data].flatMap((point): WeightedPoint[] => {
     const c = wl.items.find((i) => i.symbol === point.coin);
 
     if (c && !c.visible) {
