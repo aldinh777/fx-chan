@@ -66,15 +66,74 @@
       },
     };
   }
+
+  type SortKey = "score" | "sharpe" | "volatility" | "drawdown";
+
+  let sortBy = $state<SortKey>("score");
+  let sortDesc = $state(true);
+
+  const sortOptions = [
+    { label: "Score", value: "score" },
+    { label: "Sharpe", value: "sharpe" },
+    { label: "Volatility", value: "volatility" },
+    { label: "Max DD", value: "drawdown" },
+  ] satisfies { label: string; value: SortKey }[];
+
+  function getSortValue(r: AssetRanking) {
+    switch (sortBy) {
+      case "score":
+        return r.score;
+
+      case "sharpe":
+        return r.stats.sharpe;
+
+      case "volatility":
+        return r.stats.volatility;
+
+      case "drawdown":
+        return r.stats.max_drawdown;
+
+      default:
+        return 0;
+    }
+  }
+
+  let sortedRanking = $derived.by(() => {
+    return [...ranking].sort((a, b) => {
+      const av = getSortValue(a);
+      const bv = getSortValue(b);
+
+      return sortDesc ? bv - av : av - bv;
+    });
+  });
 </script>
 
 <div class="panel" style="margin-top: 10px;">
-  <div class="header">
+  <div class="header toolbar">
     <strong>COOL STATISTICS ({tf.active.label})</strong>
+
+    <div class="timeframe-selector">
+      <span class="toolbar-label">Sort:</span>
+
+      <div class="tf-buttons">
+        {#each sortOptions as opt}
+          <button
+            class="tf-btn"
+            class:active={sortBy === opt.value}
+            onclick={() => (sortBy = opt.value)}
+          >
+            {opt.label}
+          </button>
+        {/each}
+      </div>
+      <button class="btn update-btn" onclick={() => (sortDesc = !sortDesc)}>
+        {sortDesc ? "DESC" : "ASC"}
+      </button>
+    </div>
   </div>
 
   <div class="metrics-grid">
-    {#each ranking as r}
+    {#each sortedRanking as r}
       <div class="stat-card">
         <!-- Card Header: Primary Info -->
         <div class="card-header">
@@ -119,16 +178,19 @@
             </div>
           </div>
         </div>
+
         <!-- Progress Bar for L/H Range -->
         <div class="range-container">
           <div class="range-labels">
-            <span class="text-muted text-small"
-              >L: ${formatPrice(r.stats.low)}</span
-            >
-            <span class="text-muted text-small"
-              >${formatPrice(r.stats.high)} :H</span
-            >
+            <span class="text-muted text-small">
+              L: ${formatPrice(r.stats.low)}
+            </span>
+
+            <span class="text-muted text-small">
+              ${formatPrice(r.stats.high)} :H
+            </span>
           </div>
+
           <div class="progress-bar">
             <div
               class="progress-fill"
@@ -183,7 +245,7 @@
                 class="label help"
                 use:tooltip={"Relative %: Asset performance compared to the total market average"}
               >
-                Relative %
+                Rate
               </div>
 
               <div class="value {r.rate >= 0 ? 'text-green' : 'text-red'}">
@@ -194,9 +256,9 @@
             <div class="stat">
               <span
                 class="label help"
-                use:tooltip={"Total return over the selected timeframe"}
+                use:tooltip={`Total return over ${tf.active.label}`}
               >
-                {tf.active.label} Return
+                Return
               </span>
 
               <div class="value {r.score >= 0 ? 'text-green' : 'text-red'}">
@@ -229,7 +291,7 @@
               </span>
 
               <span
-                class="value {r.stats.volatility >= 0.05
+                class="value {r.stats.volatility >= 0.06
                   ? 'text-purple'
                   : 'text-muted'}"
               >

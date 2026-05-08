@@ -62,5 +62,5 @@ export function buildRanking(data: WeightedPoint[]): AssetRanking[] {
         sharpe: 1,
       } as PriceStats,
     } as AssetRanking,
-  ].sort((a: AssetRanking, b: AssetRanking) => b.score - a.score);
+  ];
 }
