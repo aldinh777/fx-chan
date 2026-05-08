@@ -261,7 +261,7 @@
                 Return
               </span>
 
-              <div class="value {r.score >= 0 ? 'text-green' : 'text-red'}">
+              <div class="value {r.stats.absolute_growth >= 0 ? 'text-green' : 'text-red'}">
                 {(r.stats.absolute_growth * 100).toFixed(2)}%
               </div>
             </div>
