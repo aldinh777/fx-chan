@@ -14,7 +14,11 @@
   let inverted = $state(false);
 
   let computed: Computed[] = $derived(
-    getFormattedMarkets(points, base, inverted),
+    getFormattedMarkets(
+      points.filter((p) => p.coin !== "usdc"),
+      base,
+      inverted,
+    ),
   );
 </script>
 
