@@ -114,12 +114,6 @@
   font-size: 0.9em;
 }
 
-.stat-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 .label {
   color: var(--muted, #888);
   font-size: 0.68rem;
@@ -128,6 +122,7 @@
 
 .value {
   font-size: 0.86rem;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -136,16 +131,14 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .stat {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
-}
-
-.align-right {
-  text-align: right;
 }
 
 /* Specific Drawdown Badge */
@@ -164,25 +157,6 @@
   text-decoration: underline dotted var(--muted);
   text-underline-offset: 3px;
 }
-
-/* Style for the actual floating popup */
-.tooltip-popup {
-  position: fixed;
-  padding: 6px 10px;
-  background: var(--panel);
-  border: 1px solid var(--accent);
-  color: var(--text);
-  font-size: 0.75rem;
-  border-radius: 4px;
-  pointer-events: none;
-  transform: translate(-50%, -100%);
-  white-space: nowrap;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  /* Subtle glow to match neon theme */
-  filter: drop-shadow(0 0 2px var(--accent));
-}
-
 .asset-btn {
   display: inline-flex; /* Use inline-flex so it doesn't stretch to 100% width */
   align-items: center; /* This is the magic line for vertical centering */
