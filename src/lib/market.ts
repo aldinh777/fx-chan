@@ -7,6 +7,7 @@ export interface PriceStats {
   intensity: number;
   volume: number;
   avg_volume: number;
+  absolute_growth: number;
   sharpe: number;
   base_price?: number;
 }

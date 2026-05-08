@@ -136,7 +136,7 @@
           <div class="stat">
             <div
               class="label help"
-              use:tooltip={"Performance Strength Score : Asset performance rank vs market average"}
+              use:tooltip={"Relative Performance Score : Asset performance rank vs market average"}
             >
               Score
             </div>
@@ -209,40 +209,13 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={"Largest peak-to-trough price drop"}
-              >Max Drawdown</span
+              use:tooltip={"Risk-Adjusted Return. Higher means a smoother, safer uptrend."}
             >
-            <span class="value badge-dd"
-              >-{(r.stats.max_drawdown * 100).toFixed(2)}%</span
-            >
-          </div>
-          <div class="stat-row">
-            <span
-              class="label help"
-              use:tooltip={`Realized Volatility: Average price swing (High-to-Low) over the ${tf.active.label} period`}
-            >
-              Volatility
+              {tf.active.label} Return
             </span>
-            <span class="value text-purple"
-              >{(r.stats.volatility * 100).toFixed(2)}%</span
-            >
-          </div>
-
-          <div class="stat-row">
-            <span
-              class="label help"
-              use:tooltip={"Relative Volume (Current / Avg). > 1.0 means high activity."}
-            >
-              Vol Intensity
-            </span>
-            <span
-              class="value"
-              style="color: {r.stats.intensity > 1.5
-                ? 'var(--accent)'
-                : 'var(--muted)'}"
-            >
-              {r.stats.intensity.toFixed(2)}x
-            </span>
+            <div class="value {r.score >= 0 ? 'text-green' : 'text-red'}">
+              {(r.stats.absolute_growth * 100).toFixed(2)}%
+            </div>
           </div>
 
           <div class="stat-row">
@@ -253,6 +226,17 @@
             >
             <span class="value text-muted">
               ${formatVolume(r.stats.volume)}
+            </span>
+          </div>
+
+          <div class="stat-row">
+            <span
+              class="label help"
+              use:tooltip={`Average volume traded over ${tf.active.label}`}
+              >Average Volume</span
+            >
+            <span class="value text-muted">
+              ${formatVolume(r.stats.avg_volume)}
             </span>
           </div>
 
@@ -270,12 +254,41 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={`Average volume traded over ${tf.active.label}`}
-              >Average Volume</span
+              use:tooltip={"Relative Volume (Current / Avg). > 1.0 means high activity."}
             >
-            <span class="value text-muted">
-              ${formatVolume(r.stats.avg_volume)}
+              Volume Intensity
             </span>
+            <span
+              class="value"
+              style="color: {r.stats.intensity > 1.5
+                ? 'var(--accent)'
+                : 'var(--muted)'}"
+            >
+              {r.stats.intensity.toFixed(2)}x
+            </span>
+          </div>
+
+          <div class="stat-row">
+            <span
+              class="label help"
+              use:tooltip={"Largest peak-to-trough price drop"}
+              >Max Drawdown</span
+            >
+            <span class="value badge-dd"
+              >-{(r.stats.max_drawdown * 100).toFixed(2)}%</span
+            >
+          </div>
+
+          <div class="stat-row">
+            <span
+              class="label help"
+              use:tooltip={`Realized Volatility: Average price swing (High-to-Low) over the ${tf.active.label} period`}
+            >
+              Volatility
+            </span>
+            <span class="value text-purple"
+              >{(r.stats.volatility * 100).toFixed(2)}%</span
+            >
           </div>
 
           <div class="stat-row">

@@ -1,4 +1,4 @@
-import type { PricePoint } from "../market";
+import type { PricePoint, PriceStats } from "../market";
 import type { CryptoItem } from "./../../stores/watchlist.svelte";
 
 import { tf } from "./../../stores/timeframe.svelte";
@@ -107,9 +107,10 @@ export async function fetchHyperliquidCoin(
         intensity,
         volume,
         avg_volume,
+        absolute_growth,
         sharpe,
-      },
-    };
+      } as PriceStats,
+    } as PricePoint;
   } catch {
     return null;
   }

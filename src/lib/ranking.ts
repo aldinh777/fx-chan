@@ -58,6 +58,7 @@ export function buildRanking(data: WeightedPoint[]): AssetRanking[] {
         volatility: 0,
         intensity: 0,
         volume: 0,
+        absolute_growth: 0,
         sharpe: 1,
       } as PriceStats,
     } as AssetRanking,
