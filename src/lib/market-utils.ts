@@ -19,9 +19,7 @@ export interface Computed {
 
 export function weightPoints(data: PricePoint[]) {
   return data.flatMap((point): WeightedPoint[] => {
-    const c = wl.items.find(
-      (i) => i.symbol.toLowerCase() === point.coin.toLowerCase(),
-    );
+    const c = wl.items.find((i) => i.symbol === point.coin);
 
     if (c && !c.visible) {
       return [];
@@ -46,37 +44,37 @@ export function getFormattedMarkets(
   points: PricePoint[],
   base: string,
   inverted: boolean,
-) {
+): Computed[] {
   const baseRow = points.find((r) => r.coin === base);
 
-  const mapped = points.map((row) => {
+  const mapped = points.map((p): Computed => {
     // Convert Logic
     let c;
-    if (row.coin === base && base !== "usdc") {
+    if (p.coin === base && base !== "usdc") {
       c = {
-        t0: inverted ? row.t0 : 1 / row.t0,
-        t1: inverted ? row.t1 : 1 / row.t1,
+        t0: inverted ? p.t0 : 1 / p.t0,
+        t1: inverted ? p.t1 : 1 / p.t1,
         pair: inverted
-          ? `${row.coin.toUpperCase()}/USDC`
-          : `USDC/${row.coin.toUpperCase()}`,
+          ? `${p.coin.toUpperCase()}/USDC`
+          : `USDC/${p.coin.toUpperCase()}`,
       };
-    } else if (!baseRow || base === "usd") {
+    } else if (!baseRow || base === "usdc") {
       c = {
-        t0: inverted ? 1 / row.t0 : row.t0,
-        t1: inverted ? 1 / row.t1 : row.t1,
+        t0: inverted ? 1 / p.t0 : p.t0,
+        t1: inverted ? 1 / p.t1 : p.t1,
         pair: inverted
-          ? `${base.toUpperCase()}/${row.coin.toUpperCase()}`
-          : `${row.coin.toUpperCase()}/${base.toUpperCase()}`,
+          ? `${base.toUpperCase()}/${p.coin.toUpperCase()}`
+          : `${p.coin.toUpperCase()}/${base.toUpperCase()}`,
       };
     } else {
-      const t0 = row.t0 / baseRow.t0;
-      const t1 = row.t1 / baseRow.t1;
+      const t0 = p.t0 / baseRow.t0;
+      const t1 = p.t1 / baseRow.t1;
       c = {
         t0: inverted ? 1 / t0 : t0,
         t1: inverted ? 1 / t1 : t1,
         pair: inverted
-          ? `${base.toUpperCase()}/${row.coin.toUpperCase()}`
-          : `${row.coin.toUpperCase()}/${base.toUpperCase()}`,
+          ? `${base.toUpperCase()}/${p.coin.toUpperCase()}`
+          : `${p.coin.toUpperCase()}/${base.toUpperCase()}`,
       };
     }
 
@@ -108,7 +106,7 @@ export function getFormattedMarkets(
     while (i < t1Str.length && i < t0Str.length && t1Str[i] === t0Str[i]) i++;
 
     return {
-      row,
+      row: p,
       c: {
         ...c,
         common: t1Str.slice(0, i),

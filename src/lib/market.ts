@@ -38,7 +38,7 @@ export function baseRates(data: PricePoint[]) {
   return data.map((d) => rate(d.t1, d.t0));
 }
 
-export const logRate = (t1: number, t0: number) => Math.log(t1 / t0) * 100;
+export const logRate = (t1: number, t0: number) => Math.log(t1 / t0);
 
 export function baseLogRates(data: PricePoint[]) {
   return data.map((d) => logRate(d.t1, d.t0));

@@ -82,7 +82,7 @@
       <div class="card" class:hidden-card={!crypto.visible}>
         <!-- Card Header: Symbol and Status -->
         <div class="card-header">
-          <strong class="asset-symbol">{crypto.symbol}</strong>
+          <strong class="asset-symbol">{crypto.symbol.toUpperCase()}</strong>
           <span
             class="badge"
             class:tracking={crypto.visible}
@@ -149,7 +149,9 @@
           {#if confirmDelete === crypto.id}
             <!-- CONFIRMATION STATE -->
             <div class="confirm-mode">
-              <span class="confirm-text">Delete <b>{crypto.symbol}</b>?</span>
+              <span class="confirm-text"
+                >Delete <b>{crypto.symbol.toUpperCase()}</b>?</span
+              >
               <div class="confirm-buttons">
                 <button
                   class="btn btn-danger btn-confirm"

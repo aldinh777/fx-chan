@@ -18,49 +18,62 @@ export interface WeightedPoint extends PricePoint {
 }
 
 export function buildRanking(data: WeightedPoint[]): AssetRanking[] {
-  let totalWeight = 0;
-  let weightedSum = 0;
+  const usdc = {
+    base: "usdc",
+    coin: "usdc",
+    t0: 1,
+    t1: 1,
+    v1: 0,
+    weight: 1,
+    confidence: 1,
+    position: 0,
+    stats: {
+      max_drawdown: 0,
+      high: 1,
+      low: 1,
+      avg: 1,
+      base_price: 1,
+      volatility: 0,
+      intensity: 0,
+      volume: 0,
+      absolute_growth: 0,
+      sharpe: 1,
+    } as PriceStats,
+  } as WeightedPoint;
 
-  for (const d of data) {
-    const assetLogReturn = logRate(d.t1, d.t0);
-    weightedSum += assetLogReturn * d.weight;
-    totalWeight += d.weight;
-  }
+  const withUsdc = [usdc, ...data];
 
-  const marketAvg = totalWeight > 0 ? weightedSum / totalWeight : 0;
+  return withUsdc.map((p) => {
+    let weightedSum = 0;
+    let totalWeight = 0;
 
-  return [
-    ...data.map((d): AssetRanking => {
-      const rawScore = logRate(d.t1, d.t0) - marketAvg;
-      const score = rawScore * d.confidence;
-      const rate = (Math.exp(score / 100) - 1) * 100;
+    for (const d of withUsdc) {
+      if (p.coin === d.coin) {
+        continue;
+      }
 
-      return {
-        current: d.t1,
-        symbol: d.coin.toUpperCase(),
-        rate,
-        score,
-        last_volume: d.v1,
-        stats: { ...d.stats, base_price: d.t1 / (1 + rate / 100) },
-      };
-    }),
-    {
-      symbol: "USDC",
-      current: 1,
-      score: 0 - marketAvg,
-      rate: (Math.exp((0 - marketAvg) / 100) - 1) * 100,
-      stats: {
-        max_drawdown: 0,
-        high: 1,
-        low: 1,
-        avg: 1,
-        base_price: 1,
-        volatility: 0,
-        intensity: 0,
-        volume: 0,
-        absolute_growth: 0,
-        sharpe: 1,
-      } as PriceStats,
-    } as AssetRanking,
-  ];
+      totalWeight += d.weight;
+
+      if (p.coin === "usdc") {
+        weightedSum += logRate(1 / d.t1, 1 / d.t0) * d.weight;
+      } else if (d.coin === "usdc") {
+        weightedSum += logRate(p.t1, p.t0) * d.weight;
+      } else {
+        weightedSum += logRate(p.t1 / d.t1, p.t0 / d.t0) * d.weight;
+      }
+    }
+
+    const score = (weightedSum / totalWeight) * p.confidence;
+    const rate = 100 * (Math.exp(score) - 1);
+    const displayScore = 100 * score;
+
+    return {
+      current: p.t1,
+      symbol: p.coin.toUpperCase(),
+      rate,
+      score: displayScore,
+      last_volume: p.v1,
+      stats: { ...p.stats, base_price: p.t1 / (1 + rate / 100) },
+    } as AssetRanking;
+  });
 }

@@ -28,7 +28,7 @@ const defaultCoins = [
 
 const defaultItems = defaultCoins.map((coin) => ({
   id: coin,
-  symbol: coin.toUpperCase(),
+  symbol: coin,
   visible: true,
   weight: 1,
   confidence: 1,
@@ -40,7 +40,7 @@ class WatchlistStore {
   mode = $state<WeightMode>(load("watchlist_mode", "target_weight"));
 
   add(symbol: string): { success: boolean; message?: string } {
-    const cleanSymbol = symbol.trim().toUpperCase();
+    const cleanSymbol = symbol.trim().toLowerCase();
 
     if (!cleanSymbol)
       return { success: false, message: "Symbol cannot be empty." };
