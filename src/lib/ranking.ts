@@ -1,6 +1,21 @@
-import type { WeightedPoint, AssetRanking, PriceStats } from "./market";
+import type { PriceStats, PricePoint } from "./market";
 
 import { logRate } from "./market";
+
+export interface AssetRanking {
+  symbol: string;
+  current: number;
+  score: number;
+  rate: number;
+  last_volume: number;
+  stats: PriceStats;
+}
+
+export interface WeightedPoint extends PricePoint {
+  weight: number;
+  confidence: number;
+  position: number;
+}
 
 export function buildRanking(data: WeightedPoint[]): AssetRanking[] {
   let totalWeight = 0;
@@ -24,17 +39,14 @@ export function buildRanking(data: WeightedPoint[]): AssetRanking[] {
         current: d.t1,
         symbol: d.coin.toUpperCase(),
         rate,
-        score, // The confidence-adjusted log-based relative strength
+        score,
+        last_volume: d.v1,
         stats: { ...d.stats, base_price: d.t1 / (1 + rate / 100) },
       };
     }),
-
-    // USDC / Baseline handling
     {
       symbol: "USDC",
       current: 1,
-      // USDC inherently has no volatility against itself, so its "raw" score is 0 - marketAvg.
-      // Since it's the base asset, we usually consider it 100% confidence.
       score: 0 - marketAvg,
       rate: (Math.exp((0 - marketAvg) / 100) - 1) * 100,
       stats: {

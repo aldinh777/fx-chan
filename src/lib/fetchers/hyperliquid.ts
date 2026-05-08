@@ -86,17 +86,18 @@ export async function fetchHyperliquidCoin(
     const avg = count > 0 ? sum / count : 0;
     const volatility = totalVolatility / count;
 
-    const avgVolume = volume / count;
-    const intensity = (v1 * t1) / avgVolume;
+    const avg_volume = volume / count;
+    const intensity = (v1 * t1) / avg_volume;
 
-    const absoluteGrowth = (t1 - t0) / t0;
-    const sharpe = absoluteGrowth / (volatility + 0.0001);
+    const absolute_growth = (t1 - t0) / t0;
+    const sharpe = absolute_growth / (volatility + 0.0001);
 
     return {
       base: "usdc",
       coin: symbolString.toLowerCase(),
       t0,
       t1,
+      v1,
       stats: {
         max_drawdown,
         high,
@@ -104,7 +105,8 @@ export async function fetchHyperliquidCoin(
         avg,
         volatility,
         intensity,
-        volume: v1,
+        volume,
+        avg_volume,
         sharpe,
       },
     };

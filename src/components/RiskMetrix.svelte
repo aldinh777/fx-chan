@@ -1,7 +1,7 @@
 <script lang="ts">
   import "./RiskMetrix.css";
 
-  import type { AssetRanking } from "../lib/market";
+  import type { AssetRanking } from "../lib/ranking";
   import { tf } from "../stores/timeframe.svelte";
   import CryptoIcon from "./CryptoIcon.svelte";
 
@@ -32,14 +32,12 @@
     return volumeFormatter.format(val);
   }
 
-  // Calculates how "full" the bar should be based on current price vs dynamic range
   function getRangePercentage(current: number, low: number, high: number) {
     if (high <= low) return 100;
     const percentage = ((current - low) / (high - low)) * 100;
     return Math.max(0, Math.min(100, percentage));
   }
 
-  // Tooltip Action (Unchanged)
   function tooltip(node: HTMLElement, text: string) {
     let tooltipEl: HTMLDivElement | null = null;
 
@@ -99,8 +97,66 @@
             <CryptoIcon symbol={r.symbol} size={20} />
             {r.symbol}
           </button>
-          <div class="primary-price {r.rate >= 0 ? 'text-green' : 'text-red'}">
-            ${formatPrice(r.current)}
+
+          <div class="primary-price">
+            <div
+              class="current-price {r.rate >= 0 ? 'text-green' : 'text-red'}"
+            >
+              ${formatPrice(r.current)}
+            </div>
+
+            <div class="price-details">
+              <div class="detail-item text-muted">
+                <span class="detail-label help" use:tooltip={"Average Price"}>
+                  avg
+                </span>
+
+                <span class="detail-value">
+                  {formatPrice(r.stats.avg)}
+                </span>
+              </div>
+
+              <div class="detail-item text-purple">
+                <span
+                  class="detail-label help"
+                  use:tooltip={"Relative Zero : Price at total market average"}
+                >
+                  base
+                </span>
+
+                <span class="detail-value">
+                  {formatPrice(r.stats.base_price)}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat">
+            <div
+              class="label help"
+              use:tooltip={"Performance Strength Score : Asset performance rank vs market average"}
+            >
+              Score
+            </div>
+
+            <div class="value {r.score >= 0 ? 'text-green' : 'text-red'}">
+              {r.score.toFixed(2)}
+            </div>
+          </div>
+
+          <div class="stat align-right">
+            <div
+              class="label help"
+              use:tooltip={"Relative %: Asset performance compared to the total market average"}
+            >
+              Relative %
+            </div>
+
+            <div class="value {r.rate >= 0 ? 'text-green' : 'text-red'}">
+              {r.rate > 0 ? "+" : ""}{r.rate.toFixed(2)}%
+            </div>
           </div>
         </div>
 
@@ -111,7 +167,7 @@
               >L: ${formatPrice(r.stats.low)}</span
             >
             <span class="text-muted text-small"
-              >H: ${formatPrice(r.stats.high)}</span
+              >${formatPrice(r.stats.high)} :H</span
             >
           </div>
           <div class="progress-bar">
@@ -124,54 +180,32 @@
               )}%;"
             ></div>
           </div>
+
+          <div class="progress-bar">
+            <div
+              class="progress-fill average"
+              style="width: {getRangePercentage(
+                r.stats.avg,
+                r.stats.low,
+                r.stats.high,
+              )}%;"
+            ></div>
+          </div>
+
+          <div class="progress-bar">
+            <div
+              class="progress-fill relative-zero"
+              style="width: {getRangePercentage(
+                r.stats.base_price || 0,
+                r.stats.low,
+                r.stats.high,
+              )}%;"
+            ></div>
+          </div>
         </div>
 
         <!-- Card Body: Dense Stats List -->
         <div class="card-body">
-          <div class="stat-row">
-            <span
-              class="label help"
-              use:tooltip={"Strength Index: Asset performance rank vs market average (0.00 is average)"}
-            >
-              Strength Index
-            </span>
-            <span class="value {r.score >= 0 ? 'text-green' : 'text-red'}"
-              >{r.score.toFixed(2)}</span
-            >
-          </div>
-
-          <div class="stat-row">
-            <span
-              class="label help"
-              use:tooltip={"Relative %: Asset performance compared to the total market average"}
-              >Relative %</span
-            >
-            <span class="value {r.rate >= 0 ? 'text-green' : 'text-red'}"
-              >{r.rate > 0 ? "+" : ""}{r.rate.toFixed(2)}%</span
-            >
-          </div>
-
-          <div class="stat-row">
-            <span
-              class="label help"
-              use:tooltip={"Relative Zero: The price this asset would be at if it had moved exactly with the market average"}
-            >
-              Relative Zero
-            </span>
-            <span class="value text-purple"
-              >${formatPrice(r.stats.base_price)}</span
-            >
-          </div>
-
-          <div class="stat-row">
-            <span
-              class="label help"
-              use:tooltip={"Simple moving average of the daily closes"}
-              >Average Price</span
-            >
-            <span class="value text-muted">${formatPrice(r.stats.avg)}</span>
-          </div>
-
           <div class="stat-row">
             <span
               class="label help"
@@ -214,11 +248,33 @@
           <div class="stat-row">
             <span
               class="label help"
+              use:tooltip={`Total USD value traded over the ${tf.active.label} period. High volume = High liquidity.`}
+              >{tf.active.label} Volume</span
+            >
+            <span class="value text-muted">
+              ${formatVolume(r.stats.volume)}
+            </span>
+          </div>
+
+          <div class="stat-row">
+            <span
+              class="label help"
               use:tooltip={`Total USD value traded over the ${tf.active.interval} period. High volume = High liquidity.`}
               >{tf.active.interval} Volume</span
             >
             <span class="value text-muted">
-              ${formatVolume(r.stats.volume)}
+              ${formatVolume(r.last_volume)}
+            </span>
+          </div>
+
+          <div class="stat-row">
+            <span
+              class="label help"
+              use:tooltip={`Average volume traded over ${tf.active.label}`}
+              >Average Volume</span
+            >
+            <span class="value text-muted">
+              ${formatVolume(r.stats.avg_volume)}
             </span>
           </div>
 

@@ -6,16 +6,9 @@ export interface PriceStats {
   volatility: number;
   intensity: number;
   volume: number;
+  avg_volume: number;
   sharpe: number;
   base_price?: number;
-}
-
-export interface AssetRanking {
-  symbol: string;
-  current: number;
-  score: number;
-  rate: number;
-  stats: PriceStats;
 }
 
 export interface PricePoint {
@@ -23,19 +16,11 @@ export interface PricePoint {
   coin: string;
   t0: number;
   t1: number;
+  v1: number;
   stats: PriceStats;
 }
 
-export interface WeightedPoint extends PricePoint {
-  weight: number;
-  confidence: number;
-  position: number;
-}
-
 export const rate = (t1: number, t0: number) => (t1 / t0) * 100 - 100;
-
-export const avg = (arr: number[]) =>
-  arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
 
 export function relativeRates(data: PricePoint[], target: string): number[] {
   const t = data.find((d) => d.coin === target);

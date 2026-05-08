@@ -1,5 +1,6 @@
 <script lang="ts">
-  import type { PricePoint, WeightedPoint } from "./lib/market";
+  import type { PricePoint } from "./lib/market";
+  import type { AssetRanking, WeightedPoint } from "./lib/ranking";
 
   import { buildRanking } from "./lib/ranking";
   import { load, save } from "./lib/storage";
@@ -25,8 +26,7 @@
   $effect(() => save("activeTab", activeTab));
 
   let points: WeightedPoint[] = $derived(weightPoints(cryptoData));
-
-  let ranking = $derived(buildRanking(points));
+  let ranking: AssetRanking[] = $derived(buildRanking(points));
 
   async function updateCrypto() {
     cryptoData = await fetchAllCrypto();

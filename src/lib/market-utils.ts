@@ -1,4 +1,5 @@
-import type { PricePoint, WeightedPoint } from "./market";
+import type { PricePoint } from "./market";
+import type { WeightedPoint } from "./ranking";
 
 import { rate } from "./market";
 

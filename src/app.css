@@ -7,6 +7,7 @@
   --green: #00d1b2; /* cyan-green */
   --red: #ff5c5c; /* softer red */
   --accent: #1fc7d4; /* cyan highlight */
+  --purple: #a855f7;
 }
 
 body {
@@ -66,7 +67,7 @@ body {
   color: var(--red);
 }
 .text-purple {
-  color: #a855f7;
+  color: var(--purple);
 }
 .text-muted {
   color: #888;

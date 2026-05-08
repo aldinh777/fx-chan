@@ -3,6 +3,7 @@
 
   import { rate, type PricePoint } from "../lib/market";
   import { getFormattedMarkets, type Computed } from "../lib/market-utils";
+  import { tf } from "../stores/timeframe.svelte";
 
   export interface Props {
     points: PricePoint[];
@@ -31,7 +32,7 @@
         <th>PAIR</th>
         <th>NOW</th>
         <th>OLD</th>
-        <th>30D</th>
+        <th>{tf.active.label} RETURN</th>
       </tr>
     </thead>
     <tbody>
