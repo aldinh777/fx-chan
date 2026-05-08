@@ -53,17 +53,13 @@
     style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 8px;"
   >
     <span>
-      Current Mode: <strong
-        >{wl.mode === "target_weight"
-          ? "Target Weight"
-          : "Position Size"}</strong
+      <strong
+        >CURRENT MODE : {wl.mode === "target_weight"
+          ? "WEIGHTED"
+          : "PORTFOLIO"}</strong
       >
     </span>
-    <button class="btn" onclick={toggleMode}>
-      SWITCH TO {wl.mode === "target_weight"
-        ? "POSITION SIZE"
-        : "TARGET WEIGHT"}
-    </button>
+    <button class="btn" onclick={toggleMode}>SWITCH MODE </button>
   </div>
 
   <div class="controls">
