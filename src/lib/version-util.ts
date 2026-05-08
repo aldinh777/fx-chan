@@ -1,6 +1,6 @@
 import { load, save } from "./storage";
 
-const version: string = "0.0.8";
+const version: string = "0.0.9";
 
 export function ensureVersionUpdate() {
   const current_version = load("version", "");
