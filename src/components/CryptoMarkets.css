@@ -1,0 +1,66 @@
+.diff-highlight {
+  font-weight: bold;
+}
+
+.price-cell {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 600px) {
+  /* Hide headers ONLY for the Markets table */
+  .market-table thead {
+    display: none;
+  }
+
+  /* === 1. CRYPTO MARKETS TABLE (2x2 Grid Layout) === */
+  .market-table tr {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "pair rate"
+      "now old";
+    padding: 12px 0;
+    gap: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .market-table td {
+    border: none;
+    padding: 2px 0;
+  }
+
+  /* Area Assignments */
+  .market-table td:nth-child(1) {
+    grid-area: pair;
+    font-weight: bold;
+    font-size: 14px;
+  }
+  .market-table td:nth-child(2) {
+    grid-area: now;
+    color: var(--text);
+  }
+  .market-table td:nth-child(3) {
+    grid-area: old;
+    color: var(--muted);
+    text-align: right;
+  }
+  .market-table td:nth-child(4) {
+    grid-area: rate;
+    text-align: right;
+    font-weight: bold;
+  }
+
+  /* Mobile Labels for Markets */
+  .market-table td:nth-child(2)::before {
+    content: "NOW ";
+    font-size: 10px;
+    color: var(--muted);
+    margin-right: 4px;
+  }
+  .market-table td:nth-child(3)::after {
+    content: " OLD";
+    font-size: 10px;
+    color: var(--muted);
+    margin-right: 4px;
+  }
+}

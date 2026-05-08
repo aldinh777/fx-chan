@@ -1,4 +1,6 @@
 <script lang="ts">
+  import "./CryptoMarkets.css";
+
   import { rate, type PricePoint } from "../lib/market";
   import { getFormattedMarkets } from "../lib/market-utils";
 
@@ -67,7 +69,7 @@
               class:text-red={currentRate < 0}>{item.c.t0Diff}</span
             >
           </td>
-          <td class={currentRate >= 0 ? "pos" : "neg"}>
+          <td class={currentRate >= 0 ? "text-green" : "text-red"}>
             {currentRate >= 0 ? "↑" : "↓"}
             {Math.abs(currentRate).toFixed(2)}%
           </td>
@@ -76,17 +78,3 @@
     </tbody>
   </table>
 </div>
-
-<style>
-  .diff-highlight {
-    font-weight: bold;
-  }
-
-  .text-green {
-    color: var(--green);
-  }
-
-  .text-red {
-    color: var(--red);
-  }
-</style>

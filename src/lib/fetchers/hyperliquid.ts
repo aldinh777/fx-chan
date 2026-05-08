@@ -1,5 +1,8 @@
 import type { PricePoint } from "../market";
-import type { CryptoItem } from "../watchlist.svelte";
+import type { CryptoItem } from "./../../stores/watchlist.svelte";
+
+import { tf } from "./../../stores/timeframe.svelte";
+import { wl } from "./../../stores/watchlist.svelte";
 
 const API = "https://api.hyperliquid.xyz/info";
 const DAY = 24 * 60 * 60 * 1000;
@@ -110,13 +113,11 @@ export async function fetchHyperliquidCoin(
   }
 }
 
-export async function fetchAllCrypto(
-  coins: CryptoItem[],
-  days: number,
-  interval: string,
-) {
+export async function fetchAllCrypto() {
   const res = await Promise.all(
-    coins.map((c) => fetchHyperliquidCoin(c, days, interval)),
+    wl.items.map((c) =>
+      fetchHyperliquidCoin(c, tf.active.days, tf.active.interval),
+    ),
   );
 
   return res.filter(

@@ -1,0 +1,126 @@
+/* 
+    Toolbar wrapped to look like your global .panel class 
+    but styled specifically for inline sub-navigation 
+  */
+.toolbar {
+  padding: 12px;
+  background-color: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between; /* Changed: Pushes items to opposite edges */
+  align-items: center; /* NEW: Keeps them vertically centered */
+}
+
+.timeframe-selector {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.toolbar-label {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+/* 
+    Segmented Control Group 
+    Uses the deepest background color to create an inset look
+  */
+.tf-buttons {
+  display: flex;
+  background: var(--bg);
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.tf-btn {
+  background: transparent;
+  border: none;
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  padding: 6px 14px;
+  font-size: 12px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Remove the border from the very last button so it doesn't double up */
+.tf-btn:last-child {
+  border-right: none;
+}
+
+/* Soft hover effect indicating it's clickable */
+.tf-btn:hover:not(.active) {
+  background: rgba(31, 199, 212, 0.05); /* very faint cyan */
+  color: var(--accent);
+}
+
+/* 
+    ACTIVE STATE
+    Mirrors your global .btn:hover / .btn:active neon effects 
+  */
+.tf-btn.active {
+  background: rgba(31, 199, 212, 0.05); /* very faint cyan */
+  color: var(--accent);
+}
+
+/* Loading States */
+.update-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background-color: var(--accent);
+  animation: load-animation 1s infinite ease-in-out;
+}
+
+@keyframes load-animation {
+  0% {
+    width: 0%;
+    left: 0;
+  }
+  50% {
+    width: 100%;
+    left: 0;
+  }
+  100% {
+    width: 0%;
+    left: 100%;
+  }
+}
+
+/* Mobile Responsive Adjustment */
+@media (max-width: 600px) {
+  .toolbar {
+    padding: 8px;
+    flex-direction: column; /* Stacks the timeframe and update button */
+    align-items: stretch; /* Makes children fill the width */
+    gap: 12px;
+  }
+  .timeframe-selector {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+  }
+  .tf-buttons {
+    width: 100%;
+  }
+  .tf-btn {
+    flex: 1; /* Makes all buttons equal width on mobile */
+    padding: 8px 4px;
+  }
+  .update-btn {
+    width: 100%; /* Full width easy-tap button on mobile */
+  }
+}

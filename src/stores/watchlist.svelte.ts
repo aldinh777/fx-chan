@@ -1,4 +1,4 @@
-import { load, save } from "./storage"; // Import the load function
+import { load } from "../lib/storage"; // Import the load function
 
 export interface CryptoItem {
   id: string;
@@ -81,4 +81,4 @@ class WatchlistStore {
   }
 }
 
-export const watchlist = new WatchlistStore();
+export const wl = new WatchlistStore();

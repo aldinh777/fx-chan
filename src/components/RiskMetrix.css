@@ -95,20 +95,6 @@
   font-weight: 500;
 }
 
-/* Text Utility Classes */
-.text-green {
-  color: var(--green);
-}
-.text-red {
-  color: var(--red);
-}
-.text-purple {
-  color: #a855f7;
-}
-.text-muted {
-  color: #888;
-}
-
 /* Specific Drawdown Badge */
 .badge-dd {
   background-color: rgba(255, 86, 91, 0.15);
@@ -142,4 +128,14 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   /* Subtle glow to match neon theme */
   filter: drop-shadow(0 0 2px var(--accent));
+}
+
+.asset-btn {
+  display: inline-flex; /* Use inline-flex so it doesn't stretch to 100% width */
+  align-items: center; /* This is the magic line for vertical centering */
+  gap: 8px; /* This handles the spacing between the icon and text */
+
+  font-weight: bold;
+  letter-spacing: 1px;
+  padding: 4px 12px;
 }

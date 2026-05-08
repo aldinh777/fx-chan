@@ -1,13 +1,19 @@
 <script lang="ts">
-  import { watchlist } from "../lib/watchlist.svelte";
+  import { save } from "../lib/storage";
+  import { wl } from "../stores/watchlist.svelte";
   import "./Watchlist.css";
+
+  $effect(() => {
+    save("watchlist", wl.items);
+    save("watchlist_mode", wl.mode);
+  });
 
   let newSymbol = $state("");
   let editingRows = $state<Record<string, boolean>>({});
   let confirmDelete = $state<string | null>(null);
 
   function handleAdd() {
-    const result = watchlist.add(newSymbol);
+    const result = wl.add(newSymbol);
     if (result.success) {
       newSymbol = "";
     } else if (result.message) {
@@ -28,12 +34,12 @@
   }
 
   function executeDelete(id: string) {
-    watchlist.remove(id);
+    wl.remove(id);
     confirmDelete = null;
   }
 
   function toggleMode() {
-    watchlist.toggleMode();
+    wl.toggleMode();
   }
 </script>
 
@@ -48,13 +54,13 @@
   >
     <span>
       Current Mode: <strong
-        >{watchlist.mode === "target_weight"
+        >{wl.mode === "target_weight"
           ? "Target Weight"
           : "Position Size"}</strong
       >
     </span>
     <button class="btn" onclick={toggleMode}>
-      SWITCH TO {watchlist.mode === "target_weight"
+      SWITCH TO {wl.mode === "target_weight"
         ? "POSITION SIZE"
         : "TARGET WEIGHT"}
     </button>
@@ -72,11 +78,11 @@
   </div>
 
   <div class="card-grid">
-    {#if watchlist.items.length === 0}
+    {#if wl.items.length === 0}
       <div class="empty-state">No assets added yet.</div>
     {/if}
 
-    {#each watchlist.items as crypto (crypto.id)}
+    {#each wl.items as crypto (crypto.id)}
       <div class="card" class:hidden-card={!crypto.visible}>
         <!-- Card Header: Symbol and Status -->
         <div class="card-header">
@@ -92,7 +98,7 @@
 
         <!-- Card Body: Editable Metrics -->
         <div class="card-body">
-          {#if watchlist.mode === "target_weight"}
+          {#if wl.mode === "target_weight"}
             <div class="metric">
               <span class="metric-label">TARGET WEIGHT</span>
               {#if editingRows[crypto.id]}
@@ -166,10 +172,7 @@
               {editingRows[crypto.id] ? "SAVE" : "EDIT"}
             </button>
 
-            <button
-              class="btn"
-              onclick={() => watchlist.toggleVisibility(crypto.id)}
-            >
+            <button class="btn" onclick={() => wl.toggleVisibility(crypto.id)}>
               {crypto.visible ? "HIDE" : "SHOW"}
             </button>
 

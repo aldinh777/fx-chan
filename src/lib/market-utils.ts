@@ -1,4 +1,33 @@
-import { rate, type PricePoint } from "./market";
+import type { PricePoint, WeightedPoint } from "./market";
+
+import { rate } from "./market";
+
+import { wl } from "../stores/watchlist.svelte";
+
+export function weightPoints(data: PricePoint[]) {
+  return data.flatMap((point): WeightedPoint[] => {
+    const c = wl.items.find(
+      (i) => i.symbol.toLowerCase() === point.coin.toLowerCase(),
+    );
+
+    if (c && !c.visible) {
+      return [];
+    }
+
+    const weight = c?.weight ?? 1;
+    const position = c?.position ?? 0;
+    const confidence = c?.confidence ?? 1;
+
+    return [
+      {
+        ...point,
+        weight: wl.mode === "position_size" ? position * point.t1 : weight,
+        confidence: confidence,
+        position: position,
+      },
+    ];
+  });
+}
 
 export function getFormattedMarkets(
   points: PricePoint[],
@@ -8,7 +37,7 @@ export function getFormattedMarkets(
   const baseRow = points.find((r) => r.coin === base);
 
   const mapped = points.map((row) => {
-    // 1. Convert Logic
+    // Convert Logic
     let c;
     if (row.coin === base && base !== "usdc") {
       c = {
@@ -38,7 +67,7 @@ export function getFormattedMarkets(
       };
     }
 
-    // 2. Formatting Logic
+    // Formatting Logic
     const maxVal = Math.max(Math.abs(c.t1), Math.abs(c.t0));
     let decimals = maxVal >= 10 ? 2 : maxVal >= 1 ? 4 : 9;
 
@@ -76,7 +105,7 @@ export function getFormattedMarkets(
     };
   });
 
-  // 3. Sort Logic
+  // Sort Logic
   mapped.sort((a, b) => {
     const rateA = rate(a.c.t1, a.c.t0);
     const rateB = rate(b.c.t1, b.c.t0);

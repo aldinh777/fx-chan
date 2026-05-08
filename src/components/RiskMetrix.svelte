@@ -1,21 +1,16 @@
 <script lang="ts">
-  import type { AssetRanking } from "../lib/market";
-  import CryptoIcon from "./CryptoIcon.svelte";
   import "./RiskMetrix.css";
 
-  interface TimeFrame {
-    label: string;
-    days: number;
-    interval: string;
-  }
+  import type { AssetRanking } from "../lib/market";
+  import { tf } from "../stores/timeframe.svelte";
+  import CryptoIcon from "./CryptoIcon.svelte";
 
   export interface Props {
     ranking: AssetRanking[];
     base: string;
-    timeframe: TimeFrame;
   }
 
-  let { ranking, base = $bindable(), timeframe }: Props = $props();
+  let { ranking, base = $bindable() }: Props = $props();
 
   function formatPrice(val: number | undefined) {
     if (val === undefined) return "0.00";
@@ -89,7 +84,7 @@
 
 <div class="panel" style="margin-top: 10px;">
   <div class="header">
-    <strong>COOL STATISTICS ({timeframe.label})</strong>
+    <strong>COOL STATISTICS ({tf.active.label})</strong>
   </div>
 
   <div class="metrics-grid">
@@ -190,7 +185,7 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={`Realized Volatility: Average price swing (High-to-Low) over the ${timeframe.label} period`}
+              use:tooltip={`Realized Volatility: Average price swing (High-to-Low) over the ${tf.active.label} period`}
             >
               Volatility
             </span>
@@ -219,8 +214,8 @@
           <div class="stat-row">
             <span
               class="label help"
-              use:tooltip={`Total USD value traded over the ${timeframe.interval} period. High volume = High liquidity.`}
-              >{timeframe.interval} Volume</span
+              use:tooltip={`Total USD value traded over the ${tf.active.interval} period. High volume = High liquidity.`}
+              >{tf.active.interval} Volume</span
             >
             <span class="value text-muted">
               ${formatVolume(r.stats.volume)}
@@ -246,15 +241,3 @@
     {/each}
   </div>
 </div>
-
-<style>
-  .asset-btn {
-    display: inline-flex; /* Use inline-flex so it doesn't stretch to 100% width */
-    align-items: center; /* This is the magic line for vertical centering */
-    gap: 8px; /* This handles the spacing between the icon and text */
-
-    font-weight: bold;
-    letter-spacing: 1px;
-    padding: 4px 12px;
-  }
-</style>
