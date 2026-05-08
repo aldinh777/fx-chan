@@ -40,16 +40,15 @@ export function buildRanking(data: WeightedPoint[]): AssetRanking[] {
 
     const score =
       totalWeight > 0 ? (weightedSum / totalWeight) * p.confidence : 0;
-    const rate = 100 * (Math.exp(score) - 1);
-    const displayScore = 100 * score;
+    const rate = Math.exp(score) - 1;
 
     return {
       current: p.t1,
       symbol: p.coin.toUpperCase(),
-      rate,
-      score: displayScore,
+      rate: rate * 100,
+      score: score * 100,
       last_volume: p.v1,
-      stats: { ...p.stats, base_price: p.t1 / (1 + rate / 100) },
+      stats: { ...p.stats, base_price: p.t1 / (1 + rate) },
     } as AssetRanking;
   });
 }
