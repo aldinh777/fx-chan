@@ -1,6 +1,8 @@
 <script lang="ts">
   import "./Navbar.css";
 
+  import { version } from "../lib/version-util";
+
   interface Props {
     activeTab: string;
   }
@@ -23,4 +25,6 @@
   >
     WATCHLIST
   </button>
+
+  <div class="version">{version}</div>
 </nav>
