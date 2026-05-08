@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { PricePoint, WeightedPoint } from "./lib/market";
 
-  import { buildRanking } from "./lib/market";
+  import { buildRanking } from "./lib/ranking";
   import { load, save } from "./lib/storage";
 
   import { fetchAllCrypto } from "./lib/fetchers/hyperliquid";
@@ -12,8 +12,8 @@
   import Watchlist from "./components/Watchlist.svelte";
 
   import TimeFrameBar from "./components/TimeFrameBar.svelte";
-  import { ensureVersionUpdate } from "./lib/version-util";
   import { weightPoints } from "./lib/market-utils";
+  import { ensureVersionUpdate } from "./lib/version-util";
 
   ensureVersionUpdate();
 

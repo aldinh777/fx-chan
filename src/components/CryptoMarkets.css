@@ -6,7 +6,16 @@
   font-variant-numeric: tabular-nums;
 }
 
+.invert-btn {
+  position: relative;
+  overflow: hidden;
+}
+
 @media (max-width: 600px) {
+  .invert-btn {
+    width: 100%; /* Full width easy-tap button on mobile */
+  }
+
   /* Hide headers ONLY for the Markets table */
   .market-table thead {
     display: none;

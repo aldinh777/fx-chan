@@ -4,6 +4,18 @@ import { rate } from "./market";
 
 import { wl } from "../stores/watchlist.svelte";
 
+export interface Computed {
+  row: PricePoint;
+  c: {
+    common: string;
+    t1Diff: string;
+    t0Diff: string;
+    t1: number;
+    t0: number;
+    pair: string;
+  };
+}
+
 export function weightPoints(data: PricePoint[]) {
   return data.flatMap((point): WeightedPoint[] => {
     const c = wl.items.find(
