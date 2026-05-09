@@ -6,41 +6,60 @@ import { wl } from "./../../stores/watchlist.svelte";
 const API = "https://api.hyperliquid.xyz/info";
 const DAY = 24 * 60 * 60 * 1000;
 
-export async function fetchHyperliquidCoin(
+export interface CandleData {
+  // symbol & interval
+  s: string;
+  i: string;
+
+  // open high low close
+  o: string;
+  h: string;
+  l: string;
+  c: string;
+
+  // opening (t) & closing (T) time
+  t: number;
+  T: number;
+
+  // volume & times traded
+  v: string;
+  n: number;
+}
+
+export async function fetchCoin(symbol: string): Promise<CandleData[]> {
+  const now = Date.now();
+  const res = await fetch(API, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      type: "candleSnapshot",
+      req: {
+        coin: symbol.toUpperCase(),
+        interval: tf.active.interval,
+        startTime: now - tf.active.days * DAY,
+        endTime: now,
+      },
+    }),
+  });
+  return await res.json();
+}
+
+export async function calculateCoin(
   coin: CryptoItem,
-  days: number,
-  interval: string,
 ): Promise<WeightedPoint | null> {
   try {
-    const now = Date.now();
-    const symbolString = coin.symbol;
+    const candles = await fetchCoin(coin.symbol);
 
-    const res = await fetch(API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "candleSnapshot",
-        req: {
-          coin: symbolString.toUpperCase(),
-          interval,
-          startTime: now - days * DAY,
-          endTime: now,
-        },
-      }),
-    });
+    if (!Array.isArray(candles) || candles.length === 0) return null;
 
-    const json = await res.json();
-
-    if (!Array.isArray(json) || json.length === 0) return null;
-
-    const t0 = Number(json[0]?.c);
-    const t1 = Number(json.at(-1)?.c);
-    const v1 = Number(json.at(-1)?.v);
+    const t0 = Number(candles.at(0)?.c);
+    const t1 = Number(candles.at(-1)?.c);
+    const v1 = Number(candles.at(-1)?.v);
 
     if (!t0 || !t1) return null;
 
     // --- Calculate Metrix
-    const count = json.length;
+    const count = candles.length;
 
     let peak = 0;
     let max_dd = 0;
@@ -53,7 +72,7 @@ export async function fetchHyperliquidCoin(
     let returns_sum = 0;
     let c0: number | null = null;
 
-    for (const candle of json) {
+    for (const candle of candles) {
       const h = Number(candle.h || candle.c);
       const l = Number(candle.l || candle.c);
       const c = Number(candle.c);
@@ -121,11 +140,7 @@ export async function fetchHyperliquidCoin(
 }
 
 export async function fetchAllCrypto() {
-  const res = await Promise.all(
-    wl.items.map((c) =>
-      fetchHyperliquidCoin(c, tf.active.days, tf.active.interval),
-    ),
-  );
+  const res = await Promise.all(wl.items.map((c) => calculateCoin(c)));
 
   return res.filter((p) => p !== null);
 }

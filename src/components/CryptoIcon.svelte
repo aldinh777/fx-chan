@@ -1,5 +1,5 @@
 <script lang="ts">
-  let { symbol = "BTC", size = 24 } = $props();
+  let { symbol, size = 24 } = $props();
 </script>
 
 <img

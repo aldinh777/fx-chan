@@ -6,16 +6,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.invert-btn {
-  position: relative;
-}
-
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
 .controls select {
   background: var(--bg);
   color: var(--text);

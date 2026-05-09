@@ -4,6 +4,7 @@
   import { getFormattedMarkets, type ComputedPoint } from "../lib/market-utils";
   import { tf } from "../stores/timeframe.svelte";
   import { app } from "../stores/app.svelte";
+  import TradingView from "./TradingView.svelte";
 
   let inverted = $state(false);
 
@@ -15,6 +16,8 @@
     ),
   );
 </script>
+
+<TradingView />
 
 <div class="panel">
   <div class="header">

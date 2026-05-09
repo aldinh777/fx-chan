@@ -1,7 +1,7 @@
 {
   "name": "fx-chan",
   "private": true,
-  "version": "0.0.12",
+  "version": "0.0.13",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -17,5 +17,8 @@
     "svelte-check": "^4.4.6",
     "typescript": "~6.0.2",
     "vite": "^8.0.10"
+  },
+  "dependencies": {
+    "lightweight-charts": "^5.2.0"
   }
 }
