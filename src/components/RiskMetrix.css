@@ -98,6 +98,10 @@
   box-shadow: 0 0 8px var(--green);
 }
 
+.progress-fill.negative {
+  background: var(--red);
+}
+
 .progress-fill.relative-zero {
   background: var(--purple);
 }

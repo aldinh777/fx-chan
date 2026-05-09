@@ -11,6 +11,20 @@
   overflow: hidden;
 }
 
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.controls select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.5rem;
+  width: 100%;
+}
+
 @media (max-width: 600px) {
   .invert-btn {
     width: 100%; /* Full width easy-tap button on mobile */

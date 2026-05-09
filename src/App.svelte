@@ -1,47 +1,34 @@
 <script lang="ts">
-  import type { WeightedPoint } from "./lib/market";
-
-  import { load, save } from "./lib/storage";
-
-  import { fetchAllCrypto } from "./lib/fetchers/hyperliquid";
+  import { save } from "./lib/storage";
 
   import CryptoMarkets from "./components/CryptoMarkets.svelte";
   import Navbar from "./components/Navbar.svelte";
   import RiskMetrix from "./components/RiskMetrix.svelte";
+  import TimeFrameBar from "./components/TimeFrameBar.svelte";
   import Watchlist from "./components/Watchlist.svelte";
 
-  import TimeFrameBar from "./components/TimeFrameBar.svelte";
-  import { weightPoints } from "./lib/market-utils";
   import { ensureVersionUpdate } from "./lib/version-util";
+
+  import { app } from "./stores/app.svelte";
 
   ensureVersionUpdate();
 
-  let base = $state("usdc");
-  let cryptoData: WeightedPoint[] = $state(load("crypto", []));
-  $effect(() => save("crypto", cryptoData));
-
-  let activeTab = $state(load("activeTab", "dashboard"));
-  $effect(() => save("activeTab", activeTab));
-
-  let points: WeightedPoint[] = $derived(weightPoints(cryptoData));
-
-  async function updateCrypto() {
-    cryptoData = await fetchAllCrypto();
-  }
+  $effect(() => save("crypto", app.cryptoData));
+  $effect(() => save("activeTab", app.activeTab));
 </script>
 
-<Navbar bind:activeTab />
+<Navbar />
 
-{#if activeTab === "dashboard" || activeTab === "metrics"}
-  <TimeFrameBar onupdate={updateCrypto} />
+{#if app.activeTab === "dashboard" || app.activeTab === "metrics"}
+  <TimeFrameBar />
 {/if}
 
 <main class="content-area">
-  {#if activeTab === "dashboard"}
-    <CryptoMarkets {points} {base} />
-  {:else if activeTab === "metrics"}
-    <RiskMetrix {points} bind:base />
-  {:else if activeTab === "watchlist"}
+  {#if app.activeTab === "dashboard"}
+    <CryptoMarkets />
+  {:else if app.activeTab === "metrics"}
+    <RiskMetrix />
+  {:else if app.activeTab === "watchlist"}
     <Watchlist />
   {/if}
 </main>

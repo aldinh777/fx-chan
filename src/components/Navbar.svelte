@@ -2,34 +2,30 @@
   import "./Navbar.css";
 
   import { version } from "../lib/version-util";
-
-  interface Props {
-    activeTab: string;
-  }
-  let { activeTab = $bindable() }: Props = $props();
+  import { app } from "../stores/app.svelte";
 </script>
 
 <nav class="navbar">
   <button
     class="nav-item"
-    class:active={activeTab === "dashboard"}
-    onclick={() => (activeTab = "dashboard")}
+    class:active={app.activeTab === "dashboard"}
+    onclick={() => (app.activeTab = "dashboard")}
   >
     MARKET
   </button>
 
   <button
     class="nav-item"
-    class:active={activeTab === "metrics"}
-    onclick={() => (activeTab = "metrics")}
+    class:active={app.activeTab === "metrics"}
+    onclick={() => (app.activeTab = "metrics")}
   >
     RANKING
   </button>
 
   <button
     class="nav-item"
-    class:active={activeTab === "watchlist"}
-    onclick={() => (activeTab = "watchlist")}
+    class:active={app.activeTab === "watchlist"}
+    onclick={() => (app.activeTab = "watchlist")}
   >
     WATCHLIST
   </button>

@@ -1,23 +1,16 @@
 <script lang="ts">
   import "./CryptoMarkets.css";
 
-  import type { WeightedPoint } from "../lib/market";
-
   import { getFormattedMarkets, type ComputedPoint } from "../lib/market-utils";
   import { tf } from "../stores/timeframe.svelte";
-
-  export interface Props {
-    points: WeightedPoint[];
-    base: string;
-  }
-  let { points, base }: Props = $props();
+  import { app } from "../stores/app.svelte";
 
   let inverted = $state(false);
 
   let computed: ComputedPoint[] = $derived(
     getFormattedMarkets(
-      points.filter((p) => p.coin.symbol !== "usdc"),
-      base,
+      app.points.filter((p) => p.coin.symbol !== "usdc"),
+      app.base,
       inverted,
     ),
   );
@@ -26,9 +19,18 @@
 <div class="panel">
   <div class="header">
     <strong>CRYPTO MARKETS</strong>
-    <button class="btn invert-btn" onclick={() => (inverted = !inverted)}>
-      {inverted ? "NORMAL" : "INVERT"}
-    </button>
+
+    <div class="controls">
+      <select id="base-select" bind:value={app.base}>
+        {#each app.points as p}
+          <option value={p.coin.symbol}>{p.coin.symbol.toUpperCase()}</option>
+        {/each}
+      </select>
+
+      <button class="btn invert-btn" onclick={() => (inverted = !inverted)}>
+        {inverted ? "NORMAL" : "INVERT"}
+      </button>
+    </div>
   </div>
 
   <table class="table market-table" style="width: 100%;">

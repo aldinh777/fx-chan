@@ -1,19 +1,15 @@
 <script lang="ts">
   import "./RiskMetrix.css";
 
-  import type { AssetRanking, WeightedPoint } from "../lib/market";
+  import type { AssetRanking } from "../lib/market";
 
   import { buildRanking } from "../lib/market";
   import { tf } from "../stores/timeframe.svelte";
 
   import CryptoIcon from "./CryptoIcon.svelte";
+  import { app } from "../stores/app.svelte";
 
-  export interface Props {
-    points: WeightedPoint[];
-    base: string;
-  }
-  let { points, base = $bindable() }: Props = $props();
-  let ranking: AssetRanking[] = $derived(buildRanking(points));
+  let ranking: AssetRanking[] = $derived(buildRanking(app.points));
 
   function formatPrice(val: number | undefined) {
     if (val === undefined) return "0.00";
@@ -142,7 +138,7 @@
         <div class="card-header">
           <button
             class="btn asset-btn"
-            onclick={() => (base = r.symbol.toLowerCase())}
+            onclick={() => app.updateBaseAndMoveToMarket(r.point.coin.symbol)}
           >
             <CryptoIcon symbol={r.symbol} size={20} />
             {r.symbol}
@@ -196,7 +192,7 @@
 
           <div class="progress-bar">
             <div
-              class="progress-fill"
+              class="progress-fill {r.score < 0 && 'negative'}"
               style="width: {getRangePercentage(
                 r.current,
                 r.point.price.low,

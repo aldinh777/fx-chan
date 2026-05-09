@@ -2,12 +2,9 @@
   import "./TimeFrame.css";
 
   import { save } from "../lib/storage";
-  import { tf, type TimeFrame } from "../stores/timeframe.svelte";
 
-  interface Props {
-    onupdate(): void | Promise<void>;
-  }
-  let { onupdate }: Props = $props();
+  import { tf, type TimeFrame } from "../stores/timeframe.svelte";
+  import { app } from "../stores/app.svelte";
 
   $effect(() => save("timeframe", tf.active));
 
@@ -21,7 +18,7 @@
   async function handleUpdate() {
     isUpdating = true;
     try {
-      await onupdate();
+      await app.updateCrypto();
     } finally {
       isUpdating = false;
     }
