@@ -73,6 +73,22 @@ body {
   color: #888;
 }
 
+/* Cards */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border, #444);
+  padding-bottom: 8px;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.9em;
+}
+
 /* Buttons & Elements */
 .btn {
   background: #0c1f26; /* Keeps the dark teal base */

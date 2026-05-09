@@ -46,14 +46,6 @@
   opacity: 0.4;
 }
 
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding-bottom: 12px;
-}
-
 .asset-symbol {
   font-size: 1.2rem;
 }
@@ -75,11 +67,6 @@
 }
 
 /* --- Card Body Metrics --- */
-.card-body {
-  display: flex;
-  gap: 16px;
-}
-
 .metric {
   flex: 1;
   display: flex;

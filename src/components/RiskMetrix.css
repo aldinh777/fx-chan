@@ -6,6 +6,29 @@
   margin-top: 16px;
 }
 
+.asset-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.asset-balance {
+  margin-left: 0.2rem;
+  line-height: 1.1;
+}
+
+.balance-amount {
+  padding: 0.2rem 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.balance-usd {
+  font-size: 0.72rem;
+  margin-top: 0.1rem;
+}
+
 /* Individual Card Styling */
 .stat-card {
   background: rgba(0, 0, 0, 0.2);
@@ -15,15 +38,6 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-}
-
-/* Card Header */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border, #444);
-  padding-bottom: 8px;
 }
 
 .asset-btn {
@@ -111,13 +125,6 @@
 }
 
 /* Card Body (Stats List) */
-.card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  font-size: 0.9em;
-}
-
 .label {
   color: var(--muted, #888);
   font-size: 0.68rem;

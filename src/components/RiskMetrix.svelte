@@ -8,6 +8,7 @@
 
   import CryptoIcon from "./CryptoIcon.svelte";
   import { app } from "../stores/app.svelte";
+  import { wl } from "../stores/watchlist.svelte";
 
   let ranking: AssetRanking[] = $derived(buildRanking(app.points));
 
@@ -15,7 +16,14 @@
     if (val === undefined) return "0.00";
     if (val < 0.01) return val.toFixed(6);
     if (val < 1) return val.toFixed(4);
-    if (val > 1000) return val.toFixed(0);
+    if (val < 10) return val.toFixed(3);
+    if (val < 1000) return val.toFixed(2);
+    if (val < 10000) return val.toFixed(1);
+    if (val > 10000) return val.toFixed(0);
+    return val.toFixed(2);
+  }
+
+  function formatBalance(val: number) {
     return val.toFixed(2);
   }
 
@@ -143,13 +151,24 @@
       <div class="stat-card">
         <!-- Card Header: Primary Info -->
         <div class="card-header">
-          <button
-            class="btn asset-btn"
-            onclick={() => app.updateBaseAndMoveToMarket(p.coin.symbol)}
-          >
-            <CryptoIcon symbol={r.symbol} size={20} />
-            {r.symbol}
-          </button>
+          <div class="asset-info">
+            <button
+              class="btn asset-btn"
+              onclick={() => app.updateBaseAndMoveToMarket(p.coin.symbol)}
+            >
+              <CryptoIcon symbol={r.symbol} size={20} />
+              {r.symbol}
+            </button>
+
+            {#if wl.mode === "position_size"}
+              <div class="asset-balance">
+                <div class="balance-amount">{p.coin.position}</div>
+                <div class="balance-usd text-muted">
+                  ${formatBalance(p.coin.position * r.current)}
+                </div>
+              </div>
+            {/if}
+          </div>
 
           <div class="primary-price">
             <div
@@ -242,7 +261,7 @@
               </div>
 
               <div class="value {r.rate >= 0 ? 'text-green' : 'text-red'}">
-                {r.rate > 0 ? "+" : ""}{r.rate.toFixed(2)}%
+                {r.rate.toFixed(2)}%
               </div>
             </div>
 
@@ -259,7 +278,9 @@
                   ? 'text-green'
                   : 'text-red'}"
               >
-                {(p.performance.avg_growth * 100).toFixed(2)}%
+                {p.performance.avg_growth > 0 ? "+" : ""}{(
+                  p.performance.avg_growth * 100
+                ).toFixed(2)}%
               </div>
             </div>
 
@@ -276,7 +297,9 @@
                   ? 'text-green'
                   : 'text-red'}"
               >
-                {(p.performance.growth * 100).toFixed(2)}%
+                {p.performance.growth > 0 ? "+" : ""}{(
+                  p.performance.growth * 100
+                ).toFixed(2)}%
               </div>
             </div>
 
