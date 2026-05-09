@@ -120,7 +120,7 @@
   });
 </script>
 
-<div class="panel" style="margin-top: 10px;">
+<div class="panel">
   <div class="header toolbar">
     <strong>COOL STATISTICS ({tf.active.label})</strong>
 
