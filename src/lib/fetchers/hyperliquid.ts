@@ -83,8 +83,9 @@ export async function fetchHyperliquidCoin(
       const gap_up = Math.abs(h - close);
       const gap_down = Math.abs(l - close);
       const true_range = Math.max(range, gap_up, gap_down);
-      const volt_percentage = true_range / c;
+      const volt_percentage = true_range / close;
       volatility_sum += volt_percentage;
+
       close = c;
     }
 
