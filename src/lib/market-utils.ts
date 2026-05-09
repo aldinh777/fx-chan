@@ -101,38 +101,46 @@ export function getFormattedMarkets(
 
     // Formatting Logic
     const maxVal = Math.max(Math.abs(c.t1), Math.abs(c.t0));
-    let decimals = maxVal >= 10 ? 2 : maxVal >= 1 ? 4 : 9;
 
-    let t1Str = c.t1.toFixed(decimals);
-    let t0Str = c.t0.toFixed(decimals);
+    const decimals = maxVal >= 1000 ? 2 : maxVal >= 1 ? 4 : 9;
 
-    let trimCount = 0;
-    while (
-      trimCount < decimals &&
-      t1Str[t1Str.length - 1 - trimCount] === "0" &&
-      t0Str[t0Str.length - 1 - trimCount] === "0"
-    ) {
-      trimCount++;
+    function normalize(n: number) {
+      return n.toFixed(decimals).replace(/\.?0+$/, "");
     }
 
-    if (trimCount > 0) {
-      t1Str = t1Str.slice(0, -trimCount);
-      t0Str = t0Str.slice(0, -trimCount);
+    const t1Str = normalize(c.t1);
+    const t0Str = normalize(c.t0);
+
+    const [t1Int] = t1Str.split(".");
+    const [t0Int] = t0Str.split(".");
+
+    let common = "";
+
+    // hanya compare kalau panjang integer sama
+    if (t1Int.length === t0Int.length) {
+      const minLen = Math.min(t1Str.length, t0Str.length);
+
+      let i = 0;
+
+      while (i < minLen && t1Str[i] === t0Str[i]) {
+        i++;
+
+        // stop kalau beda magnitude setelah titik
+        if (t1Str[i - 1] === "." && t1Int !== t0Int) {
+          break;
+        }
+      }
+
+      common = t1Str.slice(0, i);
     }
-
-    if (t1Str.endsWith(".")) t1Str = t1Str.slice(0, -1);
-    if (t0Str.endsWith(".")) t0Str = t0Str.slice(0, -1);
-
-    let i = 0;
-    while (i < t1Str.length && i < t0Str.length && t1Str[i] === t0Str[i]) i++;
 
     return {
-      p: p,
+      p,
       c: {
         ...c,
-        common: t1Str.slice(0, i),
-        t1Diff: t1Str.slice(i, decimals > 4 ? i + 3 : t0Str.length),
-        t0Diff: t0Str.slice(i, decimals > 4 ? i + 3 : t1Str.length),
+        common,
+        t1Diff: t1Str.slice(common.length),
+        t0Diff: t0Str.slice(common.length),
         growth: c.t1 / c.t0 - 1,
       },
     };
