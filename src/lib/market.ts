@@ -1,45 +1,73 @@
-export interface PriceStats {
-  max_drawdown: number;
-  high: number;
-  low: number;
-  avg: number;
-  volatility: number;
-  intensity: number;
-  volume: number;
-  avg_volume: number;
-  absolute_growth: number;
-  sharpe: number;
-  base_price?: number;
+export interface CryptoItem {
+  id: string;
+  symbol: string;
+  visible: boolean;
+  weight: number;
+  confidence: number;
+  position: number;
 }
 
-export interface PricePoint {
-  base: string;
-  coin: string;
-  t0: number;
-  t1: number;
-  v1: number;
-  stats: PriceStats;
+export interface WeightedPoint {
+  coin: CryptoItem;
+  price: {
+    t1: number;
+    t0: number;
+    avg: number;
+    high: number;
+    low: number;
+    base?: number;
+  };
+  performance: {
+    growth: number;
+    avg_growth: number;
+    log_ratio: number;
+    sharpe: number;
+  };
+  volume: {
+    v1: number;
+    vol: number;
+    avg: number;
+    intensity: number;
+  };
+  risk: {
+    max_dd: number;
+    volatility: number;
+  };
 }
 
-export const rate = (t1: number, t0: number) => (t1 / t0) * 100 - 100;
+export interface AssetRanking {
+  point: WeightedPoint;
+  symbol: string;
+  current: number;
+  base: number;
+  score: number;
+  rate: number;
+}
 
-export function relativeRates(data: PricePoint[], target: string): number[] {
-  const t = data.find((d) => d.coin === target);
-  if (!t) return [];
+export const safeDiv = (a: number, b: number) => (b > 0 ? a / b : 0);
 
-  return data.map((d) => {
-    const t1 = t.t1 / d.t1;
-    const t0 = t.t0 / d.t0;
-    return rate(t1, t0);
+export function buildRanking(points: WeightedPoint[]): AssetRanking[] {
+  let marketWeight = 0;
+  let marketSum = 0;
+
+  for (const p of points) {
+    marketWeight += p.coin.weight;
+    marketSum += p.performance.log_ratio * p.coin.weight;
+  }
+
+  const marketAverage = safeDiv(marketSum, marketWeight);
+
+  return points.map((p): AssetRanking => {
+    const score = (p.performance.log_ratio - marketAverage) * p.coin.confidence;
+    const rate = Math.exp(score) - 1;
+
+    return {
+      point: p,
+      symbol: p.coin.symbol.toUpperCase(),
+      current: p.price.t1,
+      base: p.price.t1 / (1 + rate),
+      rate: rate * 100,
+      score: score * 100,
+    };
   });
-}
-
-export function baseRates(data: PricePoint[]) {
-  return data.map((d) => rate(d.t1, d.t0));
-}
-
-export const logRate = (t1: number, t0: number) => Math.log(t1 / t0);
-
-export function baseLogRates(data: PricePoint[]) {
-  return data.map((d) => logRate(d.t1, d.t0));
 }

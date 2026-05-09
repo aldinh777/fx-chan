@@ -15,7 +15,15 @@
     class:active={activeTab === "dashboard"}
     onclick={() => (activeTab = "dashboard")}
   >
-    DASHBOARD
+    MARKET
+  </button>
+
+  <button
+    class="nav-item"
+    class:active={activeTab === "metrics"}
+    onclick={() => (activeTab = "metrics")}
+  >
+    RANKING
   </button>
 
   <button

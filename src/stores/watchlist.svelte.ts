@@ -1,13 +1,6 @@
-import { load } from "../lib/storage"; // Import the load function
+import type { CryptoItem } from "../lib/market";
 
-export interface CryptoItem {
-  id: string;
-  symbol: string;
-  visible: boolean;
-  weight: number;
-  confidence: number;
-  position: number;
-}
+import { load } from "../lib/storage";
 
 export type WeightMode = "target_weight" | "position_size";
 

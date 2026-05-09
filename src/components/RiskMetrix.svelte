@@ -1,16 +1,19 @@
 <script lang="ts">
   import "./RiskMetrix.css";
 
-  import type { AssetRanking } from "../lib/ranking";
+  import type { AssetRanking, WeightedPoint } from "../lib/market";
+
+  import { buildRanking } from "../lib/market";
   import { tf } from "../stores/timeframe.svelte";
+
   import CryptoIcon from "./CryptoIcon.svelte";
 
   export interface Props {
-    ranking: AssetRanking[];
+    points: WeightedPoint[];
     base: string;
   }
-
-  let { ranking, base = $bindable() }: Props = $props();
+  let { points, base = $bindable() }: Props = $props();
+  let ranking: AssetRanking[] = $derived(buildRanking(points));
 
   function formatPrice(val: number | undefined) {
     if (val === undefined) return "0.00";
@@ -85,13 +88,13 @@
         return r.score;
 
       case "sharpe":
-        return r.stats.sharpe;
+        return r.point.performance.sharpe;
 
       case "volatility":
-        return r.stats.volatility;
+        return r.point.risk.volatility;
 
       case "drawdown":
-        return r.stats.max_drawdown;
+        return r.point.risk.max_dd;
 
       default:
         return 0;
@@ -159,7 +162,7 @@
                 </span>
 
                 <span class="detail-value">
-                  {formatPrice(r.stats.avg)}
+                  {formatPrice(r.point.price.avg)}
                 </span>
               </div>
 
@@ -172,7 +175,7 @@
                 </span>
 
                 <span class="detail-value">
-                  {formatPrice(r.stats.base_price)}
+                  {formatPrice(r.base)}
                 </span>
               </div>
             </div>
@@ -183,11 +186,11 @@
         <div class="range-container">
           <div class="range-labels">
             <span class="text-muted text-small">
-              L: ${formatPrice(r.stats.low)}
+              L: ${formatPrice(r.point.price.low)}
             </span>
 
             <span class="text-muted text-small">
-              ${formatPrice(r.stats.high)} :H
+              ${formatPrice(r.point.price.high)} :H
             </span>
           </div>
 
@@ -196,8 +199,8 @@
               class="progress-fill"
               style="width: {getRangePercentage(
                 r.current,
-                r.stats.low,
-                r.stats.high,
+                r.point.price.low,
+                r.point.price.high,
               )}%;"
             ></div>
           </div>
@@ -206,9 +209,9 @@
             <div
               class="progress-fill average"
               style="width: {getRangePercentage(
-                r.stats.avg,
-                r.stats.low,
-                r.stats.high,
+                r.point.price.avg,
+                r.point.price.low,
+                r.point.price.high,
               )}%;"
             ></div>
           </div>
@@ -217,9 +220,9 @@
             <div
               class="progress-fill relative-zero"
               style="width: {getRangePercentage(
-                r.stats.base_price || 0,
-                r.stats.low,
-                r.stats.high,
+                r.base,
+                r.point.price.low,
+                r.point.price.high,
               )}%;"
             ></div>
           </div>
@@ -261,8 +264,12 @@
                 Return
               </span>
 
-              <div class="value {r.stats.absolute_growth >= 0 ? 'text-green' : 'text-red'}">
-                {(r.stats.absolute_growth * 100).toFixed(2)}%
+              <div
+                class="value {r.point.performance.growth >= 0
+                  ? 'text-green'
+                  : 'text-red'}"
+              >
+                {(r.point.performance.growth * 100).toFixed(2)}%
               </div>
             </div>
 
@@ -276,9 +283,11 @@
 
               <span
                 class="value"
-                style="color: {r.stats.sharpe > 1 ? '#fcee0a' : 'var(--text)'}"
+                style="color: {r.point.performance.sharpe > 1
+                  ? '#fcee0a'
+                  : 'var(--text)'}"
               >
-                {r.stats.sharpe.toFixed(2)}
+                {r.point.performance.sharpe.toFixed(2)}
               </span>
             </div>
 
@@ -291,11 +300,11 @@
               </span>
 
               <span
-                class="value {r.stats.volatility >= 0.06
+                class="value {r.point.risk.volatility >= 0.06
                   ? 'text-purple'
                   : 'text-muted'}"
               >
-                {(r.stats.volatility * 100).toFixed(2)}%
+                {(r.point.risk.volatility * 100).toFixed(2)}%
               </span>
             </div>
 
@@ -308,7 +317,7 @@
               </span>
 
               <span class="value badge-dd">
-                -{(r.stats.max_drawdown * 100).toFixed(2)}%
+                -{(r.point.risk.max_dd * 100).toFixed(2)}%
               </span>
             </div>
           </div>

@@ -1,12 +1,9 @@
-import type { PricePoint, PriceStats } from "./market";
-import type { WeightedPoint } from "./ranking";
-
-import { rate } from "./market";
+import type { CryptoItem, WeightedPoint } from "./market";
 
 import { wl } from "../stores/watchlist.svelte";
 
-export interface Computed {
-  row: PricePoint;
+export interface ComputedPoint {
+  p: WeightedPoint;
   c: {
     common: string;
     t1Diff: string;
@@ -14,90 +11,85 @@ export interface Computed {
     t1: number;
     t0: number;
     pair: string;
+    growth: number;
   };
 }
 
-const usdc = {
-  base: "usdc",
-  coin: "usdc",
-  t0: 1,
-  t1: 1,
-  v1: 0,
+const usdCoin: CryptoItem = {
+  id: "usdc",
+  symbol: "usdc",
   weight: 1,
   confidence: 1,
   position: 0,
-  stats: {
-    max_drawdown: 0,
-    high: 1,
-    low: 1,
-    avg: 1,
-    base_price: 1,
-    volatility: 0,
-    intensity: 0,
-    volume: 0,
-    absolute_growth: 0,
-    sharpe: 1,
-  } as PriceStats,
-} as WeightedPoint;
+  visible: true,
+};
 
-export function weightPoints(data: PricePoint[]) {
-  return [usdc, ...data].flatMap((point): WeightedPoint[] => {
-    const c = wl.items.find((i) => i.symbol === point.coin);
+const usdc: WeightedPoint = {
+  coin: usdCoin,
+  price: { t1: 1, t0: 1, avg: 1, high: 1, low: 1 },
+  performance: { growth: 0, avg_growth: 0, log_ratio: 0, sharpe: 1 },
+  risk: { max_dd: 0, volatility: 0 },
+  volume: { v1: 0, vol: 0, avg: 0, intensity: 0 },
+};
+
+export function weightPoints(data: WeightedPoint[]) {
+  return [usdc, ...data].flatMap((p): WeightedPoint[] => {
+    const c = wl.items.find((i) => i.symbol === p.coin.symbol);
 
     if (c && !c.visible) {
       return [];
     }
 
-    const weight = c?.weight ?? 1;
-    const position = c?.position ?? 0;
-    const confidence = c?.confidence ?? 1;
-
     return [
       {
-        ...point,
-        weight: wl.mode === "position_size" ? position * point.t1 : weight,
-        confidence: confidence,
-        position: position,
+        ...p,
+        coin: {
+          ...p.coin,
+          weight:
+            wl.mode === "position_size"
+              ? p.coin.position * p.price.t1
+              : p.coin.weight,
+        },
       },
     ];
   });
 }
 
 export function getFormattedMarkets(
-  points: PricePoint[],
+  points: WeightedPoint[],
   base: string,
   inverted: boolean,
-): Computed[] {
-  const baseRow = points.find((r) => r.coin === base);
+): ComputedPoint[] {
+  const b = points.find((r) => r.coin.symbol === base);
 
-  const mapped = points.map((p): Computed => {
+  const mapped = points.map((p): ComputedPoint => {
     // Convert Logic
     let c;
-    if (p.coin === base && base !== "usdc") {
+    if (p.coin.symbol === base && base !== "usdc") {
       c = {
-        t0: inverted ? p.t0 : 1 / p.t0,
-        t1: inverted ? p.t1 : 1 / p.t1,
+        t0: inverted ? p.price.t0 : 1 / p.price.t0,
+        t1: inverted ? p.price.t1 : 1 / p.price.t1,
         pair: inverted
-          ? `${p.coin.toUpperCase()}/USDC`
-          : `USDC/${p.coin.toUpperCase()}`,
+          ? `${p.coin.symbol.toUpperCase()}/USDC`
+          : `USDC/${p.coin.symbol.toUpperCase()}`,
       };
-    } else if (!baseRow || base === "usdc") {
+    } else if (!b || base === "usdc") {
       c = {
-        t0: inverted ? 1 / p.t0 : p.t0,
-        t1: inverted ? 1 / p.t1 : p.t1,
+        t0: inverted ? 1 / p.price.t0 : p.price.t0,
+        t1: inverted ? 1 / p.price.t1 : p.price.t1,
         pair: inverted
-          ? `${base.toUpperCase()}/${p.coin.toUpperCase()}`
-          : `${p.coin.toUpperCase()}/${base.toUpperCase()}`,
+          ? `${base.toUpperCase()}/${p.coin.symbol.toUpperCase()}`
+          : `${p.coin.symbol.toUpperCase()}/${base.toUpperCase()}`,
       };
     } else {
-      const t0 = p.t0 / baseRow.t0;
-      const t1 = p.t1 / baseRow.t1;
+      const t0 = p.price.t0 / b.price.t0;
+      const t1 = p.price.t1 / b.price.t1;
       c = {
         t0: inverted ? 1 / t0 : t0,
         t1: inverted ? 1 / t1 : t1,
         pair: inverted
-          ? `${base.toUpperCase()}/${p.coin.toUpperCase()}`
-          : `${p.coin.toUpperCase()}/${base.toUpperCase()}`,
+          ? `${base.toUpperCase()}/${p.coin.symbol.toUpperCase()}`
+          : `${p.coin.symbol.toUpperCase()}/${base.toUpperCase()}`,
       };
     }
 
@@ -129,21 +121,20 @@ export function getFormattedMarkets(
     while (i < t1Str.length && i < t0Str.length && t1Str[i] === t0Str[i]) i++;
 
     return {
-      row: p,
+      p: p,
       c: {
         ...c,
         common: t1Str.slice(0, i),
-        t1Diff: t1Str.slice(i),
-        t0Diff: t0Str.slice(i),
+        t1Diff: t1Str.slice(i, decimals > 4 ? i + 3 : t0Str.length),
+        t0Diff: t0Str.slice(i, decimals > 4 ? i + 3 : t1Str.length),
+        growth: c.t1 / c.t0 - 1,
       },
     };
   });
 
   // Sort Logic
   mapped.sort((a, b) => {
-    const rateA = rate(a.c.t1, a.c.t0);
-    const rateB = rate(b.c.t1, b.c.t0);
-    return inverted ? rateA - rateB : rateB - rateA;
+    return inverted ? a.c.growth - b.c.growth : b.c.growth - a.c.growth;
   });
 
   return mapped;

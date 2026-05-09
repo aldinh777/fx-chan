@@ -1,8 +1,6 @@
 <script lang="ts">
-  import type { PricePoint } from "./lib/market";
-  import type { AssetRanking, WeightedPoint } from "./lib/ranking";
+  import type { WeightedPoint } from "./lib/market";
 
-  import { buildRanking } from "./lib/ranking";
   import { load, save } from "./lib/storage";
 
   import { fetchAllCrypto } from "./lib/fetchers/hyperliquid";
@@ -19,14 +17,13 @@
   ensureVersionUpdate();
 
   let base = $state("usdc");
-  let cryptoData: PricePoint[] = $state(load("crypto", []));
+  let cryptoData: WeightedPoint[] = $state(load("crypto", []));
   $effect(() => save("crypto", cryptoData));
 
   let activeTab = $state(load("activeTab", "dashboard"));
   $effect(() => save("activeTab", activeTab));
 
   let points: WeightedPoint[] = $derived(weightPoints(cryptoData));
-  let ranking: AssetRanking[] = $derived(buildRanking(points));
 
   async function updateCrypto() {
     cryptoData = await fetchAllCrypto();
@@ -35,14 +32,15 @@
 
 <Navbar bind:activeTab />
 
-{#if activeTab === "dashboard"}
+{#if activeTab === "dashboard" || activeTab === "metrics"}
   <TimeFrameBar onupdate={updateCrypto} />
 {/if}
 
 <main class="content-area">
   {#if activeTab === "dashboard"}
     <CryptoMarkets {points} {base} />
-    <RiskMetrix {ranking} bind:base />
+  {:else if activeTab === "metrics"}
+    <RiskMetrix {points} bind:base />
   {:else if activeTab === "watchlist"}
     <Watchlist />
   {/if}

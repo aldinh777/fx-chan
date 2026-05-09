@@ -1,6 +1,8 @@
 import { load, save } from "./storage";
 
-export const version: string = "v0.0.10";
+declare const __APP_VERSION__: string;
+
+export const version: string = __APP_VERSION__;
 
 export function ensureVersionUpdate() {
   const current_version = load("version", "");
@@ -8,6 +10,5 @@ export function ensureVersionUpdate() {
   if (current_version !== version) {
     save("version", version);
     localStorage.removeItem("crypto");
-    localStorage.removeItem("watchlist");
   }
 }

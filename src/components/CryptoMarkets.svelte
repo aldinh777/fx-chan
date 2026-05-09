@@ -1,21 +1,22 @@
 <script lang="ts">
   import "./CryptoMarkets.css";
 
-  import { rate, type PricePoint } from "../lib/market";
-  import { getFormattedMarkets, type Computed } from "../lib/market-utils";
+  import type { WeightedPoint } from "../lib/market";
+
+  import { getFormattedMarkets, type ComputedPoint } from "../lib/market-utils";
   import { tf } from "../stores/timeframe.svelte";
 
   export interface Props {
-    points: PricePoint[];
+    points: WeightedPoint[];
     base: string;
   }
   let { points, base }: Props = $props();
 
   let inverted = $state(false);
 
-  let computed: Computed[] = $derived(
+  let computed: ComputedPoint[] = $derived(
     getFormattedMarkets(
-      points.filter((p) => p.coin !== "usdc"),
+      points.filter((p) => p.coin.symbol !== "usdc"),
       base,
       inverted,
     ),
@@ -41,7 +42,7 @@
     </thead>
     <tbody>
       {#each computed as item}
-        {@const currentRate = rate(item.c.t1, item.c.t0)}
+        {@const currentRate = item.c.growth}
         <tr>
           <td>{item.c.pair}</td>
           <td class="price-cell">
@@ -60,7 +61,7 @@
           </td>
           <td class={currentRate >= 0 ? "text-green" : "text-red"}>
             {currentRate >= 0 ? "↑" : "↓"}
-            {Math.abs(currentRate).toFixed(2)}%
+            {Math.abs(currentRate * 100).toFixed(2)}%
           </td>
         </tr>
       {/each}

@@ -1,5 +1,4 @@
-import type { PricePoint, PriceStats } from "../market";
-import type { CryptoItem } from "./../../stores/watchlist.svelte";
+import { safeDiv, type WeightedPoint, type CryptoItem } from "../market";
 
 import { tf } from "./../../stores/timeframe.svelte";
 import { wl } from "./../../stores/watchlist.svelte";
@@ -11,7 +10,7 @@ export async function fetchHyperliquidCoin(
   coin: CryptoItem,
   days: number,
   interval: string,
-): Promise<PricePoint | null> {
+): Promise<WeightedPoint | null> {
   try {
     const now = Date.now();
     const symbolString = coin.symbol;
@@ -41,14 +40,15 @@ export async function fetchHyperliquidCoin(
     if (!t0 || !t1) return null;
 
     // --- Calculate Metrix
+    const count = json.length;
+
     let peak = 0;
-    let max_drawdown = 0;
+    let max_dd = 0;
     let high = -Infinity;
     let low = Infinity;
     let sum = 0;
-    let count = 0;
-    let prevClose = t0;
-    let totalVolatility = 0;
+    let close = t0;
+    let volatility_sum = 0;
     let volume = 0;
 
     for (const candle of json) {
@@ -61,56 +61,51 @@ export async function fetchHyperliquidCoin(
       volume += v * c;
 
       // Max Drawdown Logic
-      if (h > peak) peak = h;
+      if (h > peak) {
+        peak = h;
+      }
       if (peak > 0) {
         const drawdown = (peak - l) / peak;
-        if (drawdown > max_drawdown) max_drawdown = drawdown;
+        if (drawdown > max_dd) max_dd = drawdown;
       }
 
       // High, Low, Avg Logic
-      if (h > high) high = h;
-      if (l < low) low = l;
+      if (h > high) {
+        high = h;
+      }
+      if (l < low) {
+        low = l;
+      }
       sum += c;
-      count++;
 
       // Volatility Logic
       const range = h - l;
-      const gapUp = Math.abs(h - prevClose);
-      const gapDown = Math.abs(l - prevClose);
-      const trueRange = Math.max(range, gapUp, gapDown);
-      const voltPercent = trueRange / c;
-      totalVolatility += voltPercent;
-      prevClose = c;
+      const gap_up = Math.abs(h - close);
+      const gap_down = Math.abs(l - close);
+      const true_range = Math.max(range, gap_up, gap_down);
+      const volt_percentage = true_range / c;
+      volatility_sum += volt_percentage;
+      close = c;
     }
 
-    const avg = count > 0 ? sum / count : 0;
-    const volatility = totalVolatility / count;
+    const avg_volume = safeDiv(volume, count);
+    const intensity = safeDiv(v1 * t1, avg_volume);
 
-    const avg_volume = volume / count;
-    const intensity = (v1 * t1) / avg_volume;
+    const avg = safeDiv(sum, count);
+    const avg_growth = safeDiv(avg - t0, t0);
+    const log_ratio = Math.log(t1 / t0);
 
-    const absolute_growth = (t1 - t0) / t0;
-    const sharpe = absolute_growth / (volatility + 0.0001);
+    const growth = safeDiv(t1 - t0, t0);
+    const volatility = safeDiv(volatility_sum, count);
+    const sharpe = safeDiv(growth, volatility + 0.0001);
 
     return {
-      base: "usdc",
-      coin: symbolString.toLowerCase(),
-      t0,
-      t1,
-      v1,
-      stats: {
-        max_drawdown,
-        high,
-        low,
-        avg,
-        volatility,
-        intensity,
-        volume,
-        avg_volume,
-        absolute_growth,
-        sharpe,
-      } as PriceStats,
-    } as PricePoint;
+      coin,
+      price: { t1, t0, avg, high, low },
+      performance: { growth, avg_growth, log_ratio, sharpe },
+      risk: { max_dd, volatility },
+      volume: { v1, vol: volume, avg: avg_volume, intensity },
+    };
   } catch {
     return null;
   }
@@ -123,12 +118,5 @@ export async function fetchAllCrypto() {
     ),
   );
 
-  return res.filter(
-    (x): x is PricePoint =>
-      x !== null &&
-      typeof x.coin === "string" &&
-      typeof x.base === "string" &&
-      !Number.isNaN(x.t0) &&
-      !Number.isNaN(x.t1),
-  );
+  return res.filter((p) => p !== null);
 }
