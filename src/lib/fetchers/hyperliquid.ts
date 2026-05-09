@@ -47,9 +47,11 @@ export async function fetchHyperliquidCoin(
     let high = -Infinity;
     let low = Infinity;
     let sum = 0;
-    let close = t0;
-    let volatility_sum = 0;
     let volume = 0;
+
+    const returns = [];
+    let returns_sum = 0;
+    let c0: number | null = null;
 
     for (const candle of json) {
       const h = Number(candle.h || candle.c);
@@ -78,16 +80,23 @@ export async function fetchHyperliquidCoin(
       }
       sum += c;
 
-      // Volatility Logic
-      const range = h - l;
-      const gap_up = Math.abs(h - close);
-      const gap_down = Math.abs(l - close);
-      const true_range = Math.max(range, gap_up, gap_down);
-      const volt_percentage = true_range / close;
-      volatility_sum += volt_percentage;
-
-      close = c;
+      // Returns Logic
+      if (c0 !== null) {
+        returns.push((returns_sum += (c - c0) / c0));
+      }
+      c0 = c;
     }
+
+    const avg_returns = safeDiv(returns_sum, returns.length);
+    const volatility = Math.sqrt(
+      safeDiv(
+        returns.reduce((sum, r) => {
+          const d = r - avg_returns;
+          return sum + d * d;
+        }, 0),
+        returns.length,
+      ),
+    );
 
     const avg_volume = safeDiv(volume, count);
     const intensity = safeDiv(v1 * t1, avg_volume);
@@ -97,13 +106,12 @@ export async function fetchHyperliquidCoin(
     const log_ratio = Math.log(t1 / t0);
 
     const growth = safeDiv(t1 - t0, t0);
-    const volatility = safeDiv(volatility_sum, count);
-    const sharpe = safeDiv(growth, volatility + 0.0001);
+    const sharpe = safeDiv(growth, volatility);
 
     return {
       coin,
       price: { t1, t0, avg, high, low },
-      performance: { growth, avg_growth, log_ratio, sharpe },
+      performance: { growth, avg_growth, avg_returns, log_ratio, sharpe },
       risk: { max_dd, volatility },
       volume: { v1, vol: volume, avg: avg_volume, intensity },
     };

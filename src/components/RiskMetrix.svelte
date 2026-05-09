@@ -307,7 +307,7 @@
               </span>
 
               <span
-                class="value {p.risk.volatility >= 0.06
+                class="value {p.risk.volatility >= 0.1
                   ? 'text-purple'
                   : 'text-muted'}"
               >

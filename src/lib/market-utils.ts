@@ -27,7 +27,13 @@ const usdCoin: CryptoItem = {
 const usdc: WeightedPoint = {
   coin: usdCoin,
   price: { t1: 1, t0: 1, avg: 1, high: 1, low: 1 },
-  performance: { growth: 0, avg_growth: 0, log_ratio: 0, sharpe: 1 },
+  performance: {
+    growth: 0,
+    avg_growth: 0,
+    avg_returns: 0,
+    log_ratio: 0,
+    sharpe: 1,
+  },
   risk: { max_dd: 0, volatility: 0 },
   volume: { v1: 0, vol: 0, avg: 0, intensity: 0 },
 };
