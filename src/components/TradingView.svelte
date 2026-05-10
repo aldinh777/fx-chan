@@ -9,12 +9,25 @@
     type ISeriesApi,
     type UTCTimestamp,
     type IChartApi,
+    type CandlestickData,
   } from "lightweight-charts";
 
   import { fetchCoin } from "../lib/fetchers/hyperliquid";
   import { app } from "../stores/app.svelte";
   import CryptoIcon from "./CryptoIcon.svelte";
   import { onMount } from "svelte";
+
+  interface ChartTooltip {
+    visible: boolean;
+    x: number;
+    y: number;
+    time: string;
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    change: number;
+  }
 
   let container: HTMLDivElement | undefined = $state();
   let chart: IChartApi | undefined = $state();
@@ -23,19 +36,15 @@
   let activeCoin = $derived(
     app.cryptoData.find((c) => c.coin.symbol === app.base),
   );
-  let tooltip = $state({
+  let tooltip: ChartTooltip = $state({
     visible: false,
-
     x: 0,
     y: 0,
-
     time: "",
-
     open: 0,
     high: 0,
     low: 0,
     close: 0,
-
     change: 0,
   });
 
@@ -64,7 +73,7 @@
           low: parseFloat(c.l),
           close: parseFloat(c.c),
           time,
-        };
+        } as CandlestickData;
       });
 
       series?.setData(ohlcs);
@@ -247,22 +256,22 @@
           </div>
 
           <div class="ohlc-row">
-            <span class="o">O</span>
+            <span>O</span>
             <span>{tooltip.open}</span>
           </div>
 
           <div class="ohlc-row">
-            <span class="h">H</span>
+            <span>H</span>
             <span>{tooltip.high}</span>
           </div>
 
           <div class="ohlc-row">
-            <span class="l">L</span>
+            <span>L</span>
             <span>{tooltip.low}</span>
           </div>
 
           <div class="ohlc-row">
-            <span class="c">C</span>
+            <span>C</span>
             <span>{tooltip.close}</span>
           </div>
 
