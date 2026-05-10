@@ -21,6 +21,7 @@ export interface WeightedPoint {
     growth: number;
     avg_growth: number;
     avg_returns: number;
+    momentum: number;
     log_ratio: number;
     sharpe: number;
   };

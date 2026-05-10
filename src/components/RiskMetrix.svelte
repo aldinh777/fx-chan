@@ -9,6 +9,7 @@
   import CryptoIcon from "./CryptoIcon.svelte";
   import { app } from "../stores/app.svelte";
   import { wl } from "../stores/watchlist.svelte";
+  import { load, save } from "../lib/storage";
 
   let ranking: AssetRanking[] = $derived(buildRanking(app.points));
 
@@ -74,14 +75,18 @@
     };
   }
 
-  type SortKey = "strength" | "average" | "sharpe" | "volatility" | "drawdown";
+  type SortKey = "strength" | "momentum" | "sharpe" | "volatility" | "drawdown";
 
-  let sortBy = $state<SortKey>("strength");
-  let sortDesc = $state(true);
+  let sortBy = $state<SortKey>(load("sortBy", "strength"));
+  let sortDesc = $state(load("sortDesc", true));
+  $effect(() => {
+    save("sortBy", sortBy);
+    save("sortDesc", sortDesc);
+  });
 
   const sortOptions: { label: string; value: SortKey }[] = [
     { label: "Strength", value: "strength" },
-    { label: "Average", value: "average" },
+    { label: "Momentum", value: "momentum" },
     { label: "Sharpe", value: "sharpe" },
     { label: "Volatility", value: "volatility" },
     { label: "Max DD", value: "drawdown" },
@@ -93,8 +98,8 @@
       case "strength":
         return r.rate;
 
-      case "average":
-        return p.performance.avg_growth;
+      case "momentum":
+        return p.performance.momentum;
 
       case "sharpe":
         return p.performance.sharpe;
@@ -172,7 +177,9 @@
 
           <div class="primary-price">
             <div
-              class="current-price {r.rate >= 0 ? 'text-green' : 'text-red'}"
+              class="current-price {p.performance.growth >= 0
+                ? 'text-green'
+                : 'text-red'}"
             >
               ${formatPrice(r.current)}
             </div>
@@ -218,7 +225,7 @@
 
           <div class="progress-bar">
             <div
-              class="progress-fill {r.score < 0 && 'negative'}"
+              class="progress-fill {p.performance.growth < 0 && 'negative'}"
               style="width: {getRangePercentage(
                 r.current,
                 p.price.low,
@@ -268,19 +275,17 @@
             <div class="stat">
               <div
                 class="label help"
-                use:tooltip={`Average return over ${tf.active.label}`}
+                use:tooltip={"Calculate how implosive recent price movement"}
               >
-                Average
+                Momentum
               </div>
 
               <div
-                class="value {p.performance.avg_growth >= 0
+                class="value {p.performance.momentum >= 0
                   ? 'text-green'
                   : 'text-red'}"
               >
-                {p.performance.avg_growth > 0 ? "+" : ""}{(
-                  p.performance.avg_growth * 100
-                ).toFixed(2)}%
+                {p.performance.momentum.toFixed(2)}
               </div>
             </div>
 

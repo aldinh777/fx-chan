@@ -214,12 +214,20 @@ export async function calculateCoin(
     const log_ratio = Math.log(t1 / t0);
 
     const growth = safeDiv(t1 - t0, t0);
+    const momentum = safeDiv(growth - avg_growth, volatility);
     const sharpe = safeDiv(growth, volatility);
 
     return {
       coin,
       price: { t1, t0, avg, high, low },
-      performance: { growth, avg_growth, avg_returns, log_ratio, sharpe },
+      performance: {
+        growth,
+        avg_growth,
+        avg_returns,
+        momentum,
+        log_ratio,
+        sharpe,
+      },
       risk: { max_dd, volatility },
       volume: { v1, vol: volume, avg: avg_volume, intensity },
     };

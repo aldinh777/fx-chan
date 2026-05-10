@@ -31,6 +31,7 @@ const usdc: WeightedPoint = {
     growth: 0,
     avg_growth: 0,
     avg_returns: 0,
+    momentum: 0,
     log_ratio: 0,
     sharpe: 1,
   },
