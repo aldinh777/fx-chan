@@ -32,10 +32,10 @@
   let container: HTMLDivElement | undefined = $state();
   let chart: IChartApi | undefined = $state();
   let series: ISeriesApi<"Candlestick"> | undefined = $state();
-  let chartVisible = $derived(app.base !== "usdc");
   let activeCoin = $derived(
     app.cryptoData.find((c) => c.coin.symbol === app.base),
   );
+  let chartVisible = $derived(activeCoin !== undefined);
   let tooltip: ChartTooltip = $state({
     visible: false,
     x: 0,
@@ -64,7 +64,7 @@
       resize();
     });
 
-    fetchCoin(app.base, true).then((candles) => {
+    fetchCoin(app.base).then((candles) => {
       const ohlcs = candles.map((c) => {
         const time = Math.floor(c.t / 1000) as UTCTimestamp;
         return {

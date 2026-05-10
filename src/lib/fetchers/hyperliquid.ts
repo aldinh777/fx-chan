@@ -29,31 +29,28 @@ export interface CandleData {
 const candleCache: Record<string, CandleData[]> = {};
 const awaitFetching: Set<string> = new Set();
 
-export async function fetchCoin(
-  symbol: string,
-  useCache = false,
-): Promise<CandleData[]> {
+export async function fetchCoin(symbol: string): Promise<CandleData[]> {
   const tfsymbol = `${symbol}:${tf.active.label}:${tf.active.interval}`;
 
-  if (useCache) {
-    if (awaitFetching.has(tfsymbol)) {
-      return new Promise((resolve, reject) => {
-        let counter = 0;
-        const interval = setInterval(() => {
-          if (candleCache[tfsymbol]) {
-            clearInterval(interval);
-            resolve(candleCache[tfsymbol]);
-          }
-          if (counter >= 100) {
-            clearInterval(interval);
-            reject("cache timeout");
-          }
-          counter++;
-        }, 100);
-      });
-    } else if (candleCache[tfsymbol]) {
-      return candleCache[tfsymbol];
-    }
+  if (awaitFetching.has(tfsymbol)) {
+    return new Promise((resolve, reject) => {
+      let counter = 0;
+      const interval = setInterval(() => {
+        if (candleCache[tfsymbol]) {
+          clearInterval(interval);
+          resolve(candleCache[tfsymbol]);
+        }
+        if (counter >= 100) {
+          clearInterval(interval);
+          reject("cache timeout");
+        }
+        counter++;
+      }, 100);
+    });
+  }
+
+  if (candleCache[tfsymbol]) {
+    return candleCache[tfsymbol];
   }
 
   awaitFetching.add(tfsymbol);
@@ -83,11 +80,64 @@ export async function fetchCoin(
   }
 }
 
+interface Candleman {
+  symbol: string;
+  candles: CandleData[];
+}
+
+interface AverageReturnPoint {
+  t: number;
+  r: number;
+}
+
+export async function generateMarketAverage(coin: string, base: string) {
+  const coins = await Promise.all(
+    wl.items.map(
+      async (c): Promise<Candleman> => ({
+        symbol: c.symbol,
+        candles: await fetchCoin(c.symbol),
+      }),
+    ),
+  );
+
+  if (coins.length === 0) {
+    return [];
+  }
+
+  const minLength = Math.min(...coins.map((c) => c.candles.length));
+  const result: AverageReturnPoint[] = [];
+
+  for (let i = 0; i < minLength; i++) {
+    const t = coins[0].candles[i].t;
+
+    if (i === 0) {
+      result.push({ t: t, r: 0 });
+      continue;
+    }
+
+    let logSum = 0;
+
+    for (const coin of coins) {
+      const t0 = Number(coin.candles[0].c);
+      const t1 = Number(coin.candles[i].c);
+
+      logSum += Math.log(t1 / t0);
+    }
+
+    result.push({
+      t,
+      r: Math.exp(logSum / (coins.length + 1)) - 1,
+    });
+  }
+
+  return result;
+}
+
 export async function calculateCoin(
   coin: CryptoItem,
 ): Promise<WeightedPoint | null> {
   try {
-    const candles = await fetchCoin(coin.symbol, true);
+    const candles = await fetchCoin(coin.symbol);
 
     if (!Array.isArray(candles) || candles.length === 0) return null;
 
