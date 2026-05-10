@@ -64,7 +64,7 @@
       resize();
     });
 
-    fetchCoin(app.base).then((candles) => {
+    fetchCoin(app.base, true).then((candles) => {
       const ohlcs = candles.map((c) => {
         const time = Math.floor(c.t / 1000) as UTCTimestamp;
         return {

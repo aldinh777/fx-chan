@@ -5,7 +5,7 @@ import { weightPoints } from "../lib/market-utils";
 import { load } from "../lib/storage";
 
 class AppStore {
-  base = $state("usdc");
+  base = $state(load("base", "usdc"));
   cryptoData: WeightedPoint[] = $state(load("crypto", []));
   activeTab = $state(load("activeTab", "dashboard"));
   points: WeightedPoint[] = $derived(weightPoints(this.cryptoData));
@@ -18,7 +18,6 @@ class AppStore {
 
   updateBaseAndMoveToMarket(base: string) {
     this.base = base;
-    this.activeTab = "dashboard";
 
     requestAnimationFrame(() => {
       this.chartPanel?.scrollIntoView({

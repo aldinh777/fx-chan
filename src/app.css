@@ -56,7 +56,7 @@ body {
 .content-area {
   display: flex;
   flex-direction: column;
-  gap: 16px; /* Keeps your dashboard panels spaced nicely */
+  gap: 12px; /* Keeps your dashboard panels spaced nicely */
 }
 
 /* Text Utility Classes */

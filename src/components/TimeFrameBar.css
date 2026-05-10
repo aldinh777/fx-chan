@@ -7,7 +7,6 @@
   background-color: var(--panel);
   border: 1px solid var(--border);
   border-radius: 6px;
-  margin-bottom: 16px;
   display: flex;
   justify-content: space-between; /* Changed: Pushes items to opposite edges */
   align-items: center; /* NEW: Keeps them vertically centered */

@@ -26,29 +26,68 @@ export interface CandleData {
   n: number;
 }
 
-export async function fetchCoin(symbol: string): Promise<CandleData[]> {
-  const now = Date.now();
-  const res = await fetch(API, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      type: "candleSnapshot",
-      req: {
-        coin: symbol.toUpperCase(),
-        interval: tf.active.interval,
-        startTime: now - tf.active.days * DAY,
-        endTime: now,
-      },
-    }),
-  });
-  return await res.json();
+const candleCache: Record<string, CandleData[]> = {};
+const awaitFetching: Set<string> = new Set();
+
+export async function fetchCoin(
+  symbol: string,
+  useCache = false,
+): Promise<CandleData[]> {
+  const tfsymbol = `${symbol}:${tf.active.label}:${tf.active.interval}`;
+
+  if (useCache) {
+    if (awaitFetching.has(tfsymbol)) {
+      return new Promise((resolve, reject) => {
+        let counter = 0;
+        const interval = setInterval(() => {
+          if (candleCache[tfsymbol]) {
+            clearInterval(interval);
+            resolve(candleCache[tfsymbol]);
+          }
+          if (counter >= 100) {
+            clearInterval(interval);
+            reject("cache timeout");
+          }
+          counter++;
+        }, 100);
+      });
+    } else if (candleCache[tfsymbol]) {
+      return candleCache[tfsymbol];
+    }
+  }
+
+  awaitFetching.add(tfsymbol);
+
+  try {
+    const now = Date.now();
+    const res = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "candleSnapshot",
+        req: {
+          coin: symbol.toUpperCase(),
+          interval: tf.active.interval,
+          startTime: now - tf.active.days * DAY,
+          endTime: now,
+        },
+      }),
+    });
+
+    const candles: CandleData[] = await res.json();
+    candleCache[tfsymbol] = candles;
+
+    return candles;
+  } finally {
+    awaitFetching.delete(tfsymbol);
+  }
 }
 
 export async function calculateCoin(
   coin: CryptoItem,
 ): Promise<WeightedPoint | null> {
   try {
-    const candles = await fetchCoin(coin.symbol);
+    const candles = await fetchCoin(coin.symbol, true);
 
     if (!Array.isArray(candles) || candles.length === 0) return null;
 
@@ -141,6 +180,5 @@ export async function calculateCoin(
 
 export async function fetchAllCrypto() {
   const res = await Promise.all(wl.items.map((c) => calculateCoin(c)));
-
   return res.filter((p) => p !== null);
 }
