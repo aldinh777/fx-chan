@@ -1,6 +1,5 @@
 <script lang="ts">
-  import "./TimeFrame.css";
-
+  import "./TimeFrameBar.css";
   import { save } from "../lib/storage";
 
   import { tf, type TimeFrame } from "../stores/timeframe.svelte";
