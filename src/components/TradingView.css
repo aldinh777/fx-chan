@@ -1,0 +1,79 @@
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 12px;
+}
+
+.pair {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.pair-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.symbol {
+  font-size: 15px;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.price {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.change {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.chart-container {
+  position: relative;
+  width: 100%;
+}
+
+.tooltip {
+  position: absolute;
+  z-index: 10;
+  min-width: 140px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid #334155;
+  font-size: 12px;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+}
+
+.time {
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.positive {
+  color: var(--green);
+}
+
+.negative {
+  color: var(--red);
+}
+
+.ohlc-row {
+  display: flex;
+  justify-content: space-between;
+
+  gap: 12px;
+}

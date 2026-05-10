@@ -10,6 +10,8 @@ class AppStore {
   activeTab = $state(load("activeTab", "dashboard"));
   points: WeightedPoint[] = $derived(weightPoints(this.cryptoData));
 
+  chartPanel: HTMLDivElement | undefined = $state();
+
   async updateCrypto() {
     this.cryptoData = await fetchAllCrypto();
   }
@@ -17,6 +19,13 @@ class AppStore {
   updateBaseAndMoveToMarket(base: string) {
     this.base = base;
     this.activeTab = "dashboard";
+
+    requestAnimationFrame(() => {
+      this.chartPanel?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    });
   }
 }
 
