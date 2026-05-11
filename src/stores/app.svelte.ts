@@ -6,6 +6,7 @@ import { load } from "../lib/storage";
 
 class AppStore {
   base = $state(load("base", "usdc"));
+  coin = $state(load("coin", "usdc"));
   cryptoData: WeightedPoint[] = $state(load("crypto", []));
   activeTab = $state(load("activeTab", "dashboard"));
   points: WeightedPoint[] = $derived(weightPoints(this.cryptoData));
@@ -16,8 +17,8 @@ class AppStore {
     this.cryptoData = await fetchAllCrypto();
   }
 
-  updateBaseAndMoveToMarket(base: string) {
-    this.base = base;
+  updateCoin(coin: string) {
+    this.coin = coin;
 
     requestAnimationFrame(() => {
       this.chartPanel?.scrollIntoView({

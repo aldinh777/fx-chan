@@ -15,7 +15,10 @@
 
   ensureVersionUpdate();
 
-  $effect(() => save("base", app.base));
+  $effect(() => {
+    save("base", app.base);
+    save("coin", app.coin);
+  });
   $effect(() => save("crypto", app.cryptoData));
   $effect(() => save("activeTab", app.activeTab));
 

@@ -10,23 +10,9 @@
   import { app } from "../stores/app.svelte";
   import { wl } from "../stores/watchlist.svelte";
   import { load, save } from "../lib/storage";
+  import { formatBalance, formatPrice } from "../lib/formatter";
 
   let ranking: AssetRanking[] = $derived(buildRanking(app.points));
-
-  function formatPrice(val: number | undefined) {
-    if (val === undefined) return "0.00";
-    if (val < 0.01) return val.toFixed(6);
-    if (val < 1) return val.toFixed(4);
-    if (val < 10) return val.toFixed(3);
-    if (val < 1000) return val.toFixed(2);
-    if (val < 10000) return val.toFixed(1);
-    if (val > 10000) return val.toFixed(0);
-    return val.toFixed(2);
-  }
-
-  function formatBalance(val: number) {
-    return val.toFixed(2);
-  }
 
   function getRangePercentage(current: number, low: number, high: number) {
     if (high <= low) return 100;
@@ -159,7 +145,7 @@
           <div class="asset-info">
             <button
               class="btn asset-btn"
-              onclick={() => app.updateBaseAndMoveToMarket(p.coin.symbol)}
+              onclick={() => app.updateCoin(p.coin.symbol)}
             >
               <CryptoIcon symbol={r.symbol} size={20} />
               {r.symbol}

@@ -6,23 +6,23 @@ import { wl } from "./../../stores/watchlist.svelte";
 const API = "https://api.hyperliquid.xyz/info";
 const DAY = 24 * 60 * 60 * 1000;
 
-export interface CandleData {
+export interface CandleData<T = number> {
   // symbol & interval
   s: string;
   i: string;
 
   // open high low close
-  o: string;
-  h: string;
-  l: string;
-  c: string;
+  o: T;
+  h: T;
+  l: T;
+  c: T;
 
   // opening (t) & closing (T) time
   t: number;
   T: number;
 
   // volume & times traded
-  v: string;
+  v: T;
   n: number;
 }
 
@@ -71,7 +71,16 @@ export async function fetchCoin(symbol: string): Promise<CandleData[]> {
       }),
     });
 
-    const candles: CandleData[] = await res.json();
+    const candles: CandleData[] = (await res.json()).map(
+      (c: CandleData<string>): CandleData => ({
+        ...c,
+        o: parseFloat(c.o),
+        h: parseFloat(c.h),
+        l: parseFloat(c.l),
+        c: parseFloat(c.c),
+        v: parseFloat(c.v),
+      }),
+    );
     candleCache[tfsymbol] = candles;
 
     return candles;
@@ -90,7 +99,15 @@ interface AverageReturnPoint {
   r: number;
 }
 
-export async function generateMarketAverage(coin: string, base: string) {
+interface PriceActionResult {
+  prices: CandleData[];
+  market_avg: AverageReturnPoint[];
+}
+
+export async function calculatePriceAction(
+  coin: string,
+  base: string,
+): Promise<PriceActionResult> {
   const coins = await Promise.all(
     wl.items.map(
       async (c): Promise<Candleman> => ({
@@ -100,37 +117,67 @@ export async function generateMarketAverage(coin: string, base: string) {
     ),
   );
 
+  const baseMan: Candleman | undefined = coins.find((c) => c.symbol === base);
+  const coinMan: Candleman | undefined = coins.find((c) => c.symbol === coin);
+
+  const compare = (i: number, param: keyof CandleData) => {
+    let basePrice = 1;
+    let coinPrice = 1;
+
+    if (baseMan) {
+      basePrice = parseFloat(baseMan.candles[i][param] as string);
+    }
+    if (coinMan) {
+      coinPrice = parseFloat(coinMan.candles[i][param] as string);
+    }
+
+    return coinPrice / basePrice;
+  };
+
   if (coins.length === 0) {
-    return [];
+    return { prices: [], market_avg: [] };
   }
 
   const minLength = Math.min(...coins.map((c) => c.candles.length));
-  const result: AverageReturnPoint[] = [];
+  const marketAverages: AverageReturnPoint[] = [];
+  const priceCandles: CandleData[] = [];
 
   for (let i = 0; i < minLength; i++) {
-    const t = coins[0].candles[i].t;
+    const baseCandle = coins[0].candles[i];
 
+    // price calculation logic
+    priceCandles.push({
+      ...baseCandle,
+      o: compare(i, "o"),
+      h: compare(i, "h"),
+      l: compare(i, "l"),
+      c: compare(i, "c"),
+    });
+
+    // market averaging logic
     if (i === 0) {
-      result.push({ t: t, r: 0 });
+      marketAverages.push({ t: baseCandle.t, r: 1 });
       continue;
     }
-
     let logSum = 0;
-
     for (const coin of coins) {
-      const t0 = Number(coin.candles[0].c);
-      const t1 = Number(coin.candles[i].c);
-
+      const t0 = coin.candles[0].c;
+      const t1 = coin.candles[i].c;
       logSum += Math.log(t1 / t0);
     }
-
-    result.push({
-      t,
-      r: Math.exp(logSum / (coins.length + 1)) - 1,
+    const marketScore = logSum / (coins.length + 1);
+    const priceScore =
+      Math.log(priceCandles[i].c / priceCandles[0].c) - marketScore;
+    marketAverages.push({
+      t: baseCandle.t,
+      r: Math.exp(priceScore),
     });
   }
 
-  return result;
+  return {
+    prices: priceCandles,
+    market_avg: marketAverages,
+  };
 }
 
 export async function calculateCoin(

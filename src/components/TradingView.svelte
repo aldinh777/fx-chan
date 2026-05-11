@@ -2,20 +2,22 @@
   import "./TradingView.css";
 
   import {
-    createChart,
-    ColorType,
     CandlestickSeries,
-    type BarData,
-    type ISeriesApi,
-    type UTCTimestamp,
-    type IChartApi,
+    ColorType,
+    createChart,
+    LineSeries,
     type CandlestickData,
+    type IChartApi,
+    type ISeriesApi,
+    type LineData,
+    type UTCTimestamp,
   } from "lightweight-charts";
 
-  import { fetchCoin } from "../lib/fetchers/hyperliquid";
+  import { onMount } from "svelte";
+  import { calculatePriceAction } from "../lib/fetchers/hyperliquid";
   import { app } from "../stores/app.svelte";
   import CryptoIcon from "./CryptoIcon.svelte";
-  import { onMount } from "svelte";
+  import { formatPrice } from "../lib/formatter";
 
   interface ChartTooltip {
     visible: boolean;
@@ -26,16 +28,17 @@
     high: number;
     low: number;
     close: number;
+    diff: number;
     change: number;
   }
 
   let container: HTMLDivElement | undefined = $state();
   let chart: IChartApi | undefined = $state();
-  let series: ISeriesApi<"Candlestick"> | undefined = $state();
+  let candleSeries: ISeriesApi<"Candlestick"> | undefined = $state();
+  let lineSeries: ISeriesApi<"Line"> | undefined = $state();
   let activeCoin = $derived(
-    app.cryptoData.find((c) => c.coin.symbol === app.base),
+    app.cryptoData.find((c) => c.coin.symbol === app.coin),
   );
-  let chartVisible = $derived(activeCoin !== undefined);
   let tooltip: ChartTooltip = $state({
     visible: false,
     x: 0,
@@ -45,6 +48,7 @@
     high: 0,
     low: 0,
     close: 0,
+    diff: 0,
     change: 0,
   });
 
@@ -56,7 +60,7 @@
   };
 
   $effect(() => {
-    if (!chartVisible || !chart || !series || !container) {
+    if (!chart || !candleSeries || !container) {
       return;
     }
 
@@ -64,19 +68,27 @@
       resize();
     });
 
-    fetchCoin(app.base).then((candles) => {
-      const ohlcs = candles.map((c) => {
+    calculatePriceAction(app.coin, app.base).then(({ prices, market_avg }) => {
+      const ohlcs = prices.map((c) => {
         const time = Math.floor(c.t / 1000) as UTCTimestamp;
         return {
-          open: parseFloat(c.o),
-          high: parseFloat(c.h),
-          low: parseFloat(c.l),
-          close: parseFloat(c.c),
+          open: c.o,
+          high: c.h,
+          low: c.l,
+          close: c.c,
           time,
-        } as CandlestickData;
+        } satisfies CandlestickData;
+      });
+      const averages = market_avg.map((p, i) => {
+        const time = Math.floor(p.t / 1000) as UTCTimestamp;
+        return {
+          value: prices[i].c / p.r,
+          time,
+        } satisfies LineData;
       });
 
-      series?.setData(ohlcs);
+      candleSeries?.setData(ohlcs);
+      lineSeries?.setData(averages);
       chart?.timeScale().fitContent();
     });
   });
@@ -135,16 +147,21 @@
       handleScroll: false,
     });
 
-    series = chart.addSeries(CandlestickSeries, {
+    candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: "#26a69a",
       downColor: "#ef5350",
       borderVisible: false,
-      wickUpColor: "#26a69a",
       wickDownColor: "#ef5350",
+      wickUpColor: "#26a69a",
+    });
+
+    lineSeries = chart.addSeries(LineSeries, {
+      color: "#d47a36",
+      lineWidth: 2,
     });
 
     chart.subscribeCrosshairMove((p) => {
-      if (!container || !series) {
+      if (!container || !candleSeries) {
         return;
       }
 
@@ -152,7 +169,7 @@
         tooltip.visible = false;
         return;
       }
-      const d = p.seriesData.get(series) as BarData;
+      const d = p.seriesData.get(candleSeries) as CandlestickData;
 
       if (!d) {
         tooltip.visible = false;
@@ -192,8 +209,9 @@
         low: d.low,
         close: d.close,
 
+        diff: d.close - d.open,
         change: ((d.close - d.open) / d.open) * 100,
-      };
+      } satisfies ChartTooltip;
     });
   });
 
@@ -206,84 +224,88 @@
   });
 </script>
 
-{#if chartVisible}
-  <div class="panel">
-    <div class="chart-header">
-      <div class="pair">
-        <CryptoIcon symbol={app.base} size={32} />
+<div class="panel">
+  <div class="chart-header">
+    <div class="pair">
+      <CryptoIcon symbol={app.coin} size={32} />
 
-        <div class="pair-info">
-          <div class="symbol">
-            {app.base.toUpperCase()}/USDC
-          </div>
+      <div class="pair-info">
+        <div class="symbol">
+          {app.coin.toUpperCase()}/{app.base.toUpperCase()}
+        </div>
 
-          <div class="price-row">
-            <span
-              class="price"
-              class:positive={activeCoin && activeCoin.performance.growth >= 0}
-              class:negative={activeCoin && activeCoin.performance.growth < 0}
-            >
-              {activeCoin?.price.t1}
-            </span>
+        <div class="price-row">
+          <span
+            class="price"
+            class:positive={activeCoin && activeCoin.performance.growth >= 0}
+            class:negative={activeCoin && activeCoin.performance.growth < 0}
+          >
+            {activeCoin?.price.t1}
+          </span>
 
-            <span
-              class:positive={activeCoin && activeCoin.performance.growth >= 0}
-              class:negative={activeCoin && activeCoin.performance.growth < 0}
-              class="change"
-            >
-              {#if activeCoin?.performance.growth != null}
-                ({activeCoin.performance.growth > 0 ? "+" : ""}{(
-                  activeCoin.performance.growth * 100
-                ).toFixed(2)}%)
-              {/if}
-            </span>
-          </div>
+          <span
+            class:positive={activeCoin && activeCoin.performance.growth >= 0}
+            class:negative={activeCoin && activeCoin.performance.growth < 0}
+            class="change"
+          >
+            {#if activeCoin?.performance.growth != null}
+              ({activeCoin.performance.growth > 0 ? "+" : ""}{(
+                activeCoin.performance.growth * 100
+              ).toFixed(2)}%)
+            {/if}
+          </span>
         </div>
       </div>
     </div>
-
-    <div bind:this={container} class="chart-container">
-      {#if tooltip.visible}
-        <div
-          class="tooltip"
-          class:positive={tooltip.change >= 0}
-          class:negative={tooltip.change < 0}
-          style:left="{tooltip.x}px"
-          style:top="{tooltip.y}px"
-        >
-          <div class="time">
-            {tooltip.time}
-          </div>
-
-          <div class="ohlc-row">
-            <span>O</span>
-            <span>{tooltip.open}</span>
-          </div>
-
-          <div class="ohlc-row">
-            <span>H</span>
-            <span>{tooltip.high}</span>
-          </div>
-
-          <div class="ohlc-row">
-            <span>L</span>
-            <span>{tooltip.low}</span>
-          </div>
-
-          <div class="ohlc-row">
-            <span>C</span>
-            <span>{tooltip.close}</span>
-          </div>
-
-          <div class="ohlc-row" style="text-align: right;">
-            <span></span>
-            <span>
-              {tooltip.change.toFixed(2)}%
-            </span>
-            <span></span>
-          </div>
-        </div>
-      {/if}
-    </div>
   </div>
-{/if}
+
+  <div bind:this={container} class="chart-container">
+    {#if tooltip.visible}
+      <div
+        class="tooltip"
+        class:positive={tooltip.change >= 0}
+        class:negative={tooltip.change < 0}
+        style:left="{tooltip.x}px"
+        style:top="{tooltip.y}px"
+      >
+        <div class="time">
+          {tooltip.time}
+        </div>
+
+        <div class="ohlc-row">
+          <span>Open</span>
+          <span>{formatPrice(tooltip.open)}</span>
+        </div>
+
+        <div class="ohlc-row">
+          <span>High</span>
+          <span>{formatPrice(tooltip.high)}</span>
+        </div>
+
+        <div class="ohlc-row">
+          <span>Low</span>
+          <span>{formatPrice(tooltip.low)}</span>
+        </div>
+
+        <div class="ohlc-row">
+          <span>Close</span>
+          <span>{formatPrice(tooltip.close)}</span>
+        </div>
+
+        <div class="ohlc-row">
+          <span>Change</span>
+          <span>
+            {formatPrice(tooltip.diff)}
+          </span>
+        </div>
+
+        <div class="ohlc-row">
+          <span>%</span>
+          <span>
+            ({tooltip.change.toFixed(2)}%)
+          </span>
+        </div>
+      </div>
+    {/if}
+  </div>
+</div>
