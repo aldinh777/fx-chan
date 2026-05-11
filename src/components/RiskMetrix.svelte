@@ -303,10 +303,9 @@
               </span>
 
               <span
-                class="value"
-                style="color: {p.performance.sharpe > 1
-                  ? '#fcee0a'
-                  : 'var(--text)'}"
+                class="value {p.performance.sharpe > 1
+                  ? 'text-yellow'
+                  : 'text-muted'}"
               >
                 {p.performance.sharpe.toFixed(2)}
               </span>
@@ -337,7 +336,9 @@
                 Max DD
               </span>
 
-              <span class="value badge-dd">
+              <span
+                class="value {p.risk.max_dd > 0.1 ? 'text-red' : 'text-muted'}"
+              >
                 -{(p.risk.max_dd * 100).toFixed(2)}%
               </span>
             </div>

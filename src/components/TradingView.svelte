@@ -15,15 +15,14 @@
 
   import { onMount } from "svelte";
   import { calculatePriceAction } from "../lib/fetchers/hyperliquid";
+  import { formatPrice } from "../lib/formatter";
   import { app } from "../stores/app.svelte";
   import CryptoIcon from "./CryptoIcon.svelte";
-  import { formatPrice } from "../lib/formatter";
 
   interface ChartTooltip {
     visible: boolean;
-    x: number;
-    y: number;
     time: string;
+    base: number;
     open: number;
     high: number;
     low: number;
@@ -33,6 +32,8 @@
   }
 
   let container: HTMLDivElement | undefined = $state();
+  let tooltipContainer: HTMLDivElement | undefined = $state();
+  let shiftRightaBit = $state(false);
   let chart: IChartApi | undefined = $state();
   let candleSeries: ISeriesApi<"Candlestick"> | undefined = $state();
   let lineSeries: ISeriesApi<"Line"> | undefined = $state();
@@ -41,9 +42,8 @@
   );
   let tooltip: ChartTooltip = $state({
     visible: false,
-    x: 0,
-    y: 0,
     time: "",
+    base: 0,
     open: 0,
     high: 0,
     low: 0,
@@ -156,12 +156,13 @@
     });
 
     lineSeries = chart.addSeries(LineSeries, {
-      color: "#d47a36",
-      lineWidth: 2,
+      color: "#a855f7",
+      lineWidth: 1,
+      priceLineVisible: false,
     });
 
     chart.subscribeCrosshairMove((p) => {
-      if (!container || !candleSeries) {
+      if (!container || !candleSeries || !lineSeries) {
         return;
       }
 
@@ -169,41 +170,25 @@
         tooltip.visible = false;
         return;
       }
-      const d = p.seriesData.get(candleSeries) as CandlestickData;
 
-      if (!d) {
+      const d = p.seriesData.get(candleSeries) as CandlestickData;
+      const g = p.seriesData.get(lineSeries) as LineData;
+
+      if (tooltipContainer) {
+        shiftRightaBit = p.point.x < tooltipContainer.clientWidth + 24;
+      }
+
+      if (!d || !g) {
         tooltip.visible = false;
         return;
       }
 
-      const TOOLTIP_WIDTH = 160;
-      const TOOLTIP_HEIGHT = 140;
-      const PADDING = 16;
-
-      let x = p.point.x + PADDING;
-      let y = p.point.y + PADDING;
-
-      // move left if near right edge
-      if (x + TOOLTIP_WIDTH > container.clientWidth) {
-        x = p.point.x - TOOLTIP_WIDTH - PADDING;
-      }
-
-      // move up if near bottom edge
-      if (y + TOOLTIP_HEIGHT > container.clientHeight) {
-        y = p.point.y - TOOLTIP_HEIGHT - PADDING;
-      }
-
-      // final clamp
-      x = Math.max(0, x);
-      y = Math.max(0, y);
-
       tooltip = {
         visible: true,
-        x,
-        y,
 
         time: new Date(Number(p.time) * 1000).toLocaleString(),
 
+        base: g.value,
         open: d.open,
         high: d.high,
         low: d.low,
@@ -262,14 +247,20 @@
   <div bind:this={container} class="chart-container">
     {#if tooltip.visible}
       <div
+        bind:this={tooltipContainer}
         class="tooltip"
         class:positive={tooltip.change >= 0}
         class:negative={tooltip.change < 0}
-        style:left="{tooltip.x}px"
-        style:top="{tooltip.y}px"
+        style:left="{shiftRightaBit ? 224 : 12}px"
+        style:top="12px"
       >
         <div class="time">
           {tooltip.time}
+        </div>
+
+        <div class="ohlc-row">
+          <span>Base</span>
+          <span class="text-purple">{formatPrice(tooltip.base)}</span>
         </div>
 
         <div class="ohlc-row">
@@ -294,16 +285,12 @@
 
         <div class="ohlc-row">
           <span>Change</span>
-          <span>
-            {formatPrice(tooltip.diff)}
-          </span>
+          <span>{formatPrice(tooltip.diff)}</span>
         </div>
 
         <div class="ohlc-row">
           <span>%</span>
-          <span>
-            ({tooltip.change.toFixed(2)}%)
-          </span>
+          <span>({tooltip.change.toFixed(2)}%)</span>
         </div>
       </div>
     {/if}

@@ -1,12 +1,14 @@
 :root {
   --bg: #061217; /* deep teal-black */
   --panel: #0a1a20; /* slightly lifted teal */
-  --border: #12303a; /* teal border */
+  --border: #223a4a; /* teal border */
   --text: #cfe9e7; /* cool cyan-white */
   --muted: #6f8f94; /* desaturated teal-gray */
   --green: #00d1b2; /* cyan-green */
   --red: #ff5c5c; /* softer red */
   --accent: #1fc7d4; /* cyan highlight */
+  --yellow: #ffd166; /* warm golden yellow */
+  --orange: #ff9f43; /* soft vivid orange */
   --purple: #a855f7;
 }
 
@@ -69,8 +71,17 @@ body {
 .text-purple {
   color: var(--purple);
 }
+.text-accent {
+  color: var(--accent);
+}
+.text-yellow {
+  color: var(--yellow);
+}
+.text-orange {
+  color: var(--orange);
+}
 .text-muted {
-  color: #888;
+  color: var(--muted);
 }
 
 /* Cards */
