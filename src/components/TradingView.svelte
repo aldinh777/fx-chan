@@ -15,7 +15,7 @@
 
   import { onMount } from "svelte";
   import { calculatePriceAction } from "../lib/fetchers/hyperliquid";
-  import { formatPrice } from "../lib/formatter";
+  import { formatPrice, getPriceFormat } from "../lib/formatter";
   import { app } from "../stores/app.svelte";
   import CryptoIcon from "./CryptoIcon.svelte";
 
@@ -87,6 +87,19 @@
         } satisfies LineData;
       });
 
+      const priceSample = prices.at(-1)?.c || 0;
+
+      const format = getPriceFormat(priceSample);
+
+      candleSeries?.applyOptions({
+        priceFormat: {
+          type: "price",
+          precision: format.precision,
+          minMove: format.minMove,
+        },
+      });
+
+      candleSeries?.setData(ohlcs);
       candleSeries?.setData(ohlcs);
       lineSeries?.setData(averages);
       chart?.timeScale().fitContent();
