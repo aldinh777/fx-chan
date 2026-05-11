@@ -146,12 +146,19 @@ export async function calculatePriceAction(
     const baseCandle = coins[0].candles[i];
 
     // price calculation logic
+    const o = compare(i, "o");
+    const h = compare(i, "h");
+    const l = compare(i, "l");
+    const c = compare(i, "c");
+    const tp = (o + h + l + c) / 4;
+
     priceCandles.push({
       ...baseCandle,
-      o: compare(i, "o"),
-      h: compare(i, "h"),
-      l: compare(i, "l"),
-      c: compare(i, "c"),
+      v: coinMan ? coinMan.candles[i].v * tp : 0,
+      o,
+      h,
+      l,
+      c,
     });
 
     // market averaging logic

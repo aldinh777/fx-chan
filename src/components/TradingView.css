@@ -62,18 +62,16 @@
 .tooltip {
   position: absolute;
   top: 12px;
-
   width: 160px;
-
-  padding: 12px;
+  padding: 8px;
 
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
 
   background: rgba(6, 18, 23, 0.92);
   backdrop-filter: blur(10px);
 
-  font-size: 12px;
+  font-size: 10px;
   z-index: 10;
 
   box-shadow:
@@ -112,4 +110,11 @@
 
 .ohlc-row span:last-child {
   font-weight: 600;
+}
+
+.separator {
+  height: 1px;
+  margin: 8px 0;
+  background: var(--border);
+  opacity: 0.7;
 }

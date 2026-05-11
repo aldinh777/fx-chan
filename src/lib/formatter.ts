@@ -14,6 +14,14 @@ export function formatTinyPrice(val: number) {
 
   return `${negative ? "-" : ""}${str}`;
 }
+
+export function formatBigPrice(val: number, digits: number) {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(val);
+}
+
 export function formatPrice(val: number | undefined) {
   if (val === undefined) return "0.00";
 
@@ -26,9 +34,9 @@ export function formatPrice(val: number | undefined) {
   if (abs < 1) return val.toFixed(4);
   if (abs < 10) return val.toFixed(3);
   if (abs < 1000) return val.toFixed(2);
-  if (abs < 10000) return val.toFixed(1);
+  if (abs < 10000) return formatBigPrice(val, 1);
 
-  return val.toFixed(0);
+  return formatBigPrice(val, 0);
 }
 
 export function formatBalance(val: number) {
@@ -89,4 +97,20 @@ export function getPriceFormat(price: number) {
     precision: 0,
     minMove: 1,
   };
+}
+
+export function formatVolume(val: number | undefined) {
+  if (val == null || isNaN(val)) {
+    return "$0";
+  }
+
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    compactDisplay: "short",
+
+    style: "currency",
+    currency: "USD",
+
+    maximumFractionDigits: 2,
+  }).format(val);
 }

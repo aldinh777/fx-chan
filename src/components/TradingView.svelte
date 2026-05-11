@@ -5,8 +5,10 @@
     CandlestickSeries,
     ColorType,
     createChart,
+    HistogramSeries,
     LineSeries,
     type CandlestickData,
+    type HistogramData,
     type IChartApi,
     type ISeriesApi,
     type LineData,
@@ -15,7 +17,7 @@
 
   import { onMount } from "svelte";
   import { calculatePriceAction } from "../lib/fetchers/hyperliquid";
-  import { formatPrice, getPriceFormat } from "../lib/formatter";
+  import { formatPrice, formatVolume, getPriceFormat } from "../lib/formatter";
   import { app } from "../stores/app.svelte";
   import CryptoIcon from "./CryptoIcon.svelte";
 
@@ -23,6 +25,7 @@
     visible: boolean;
     time: string;
     base: number;
+    volume: number;
     open: number;
     high: number;
     low: number;
@@ -36,7 +39,8 @@
   let shiftRightaBit = $state(false);
   let chart: IChartApi | undefined = $state();
   let candleSeries: ISeriesApi<"Candlestick"> | undefined = $state();
-  let lineSeries: ISeriesApi<"Line"> | undefined = $state();
+  let marketSeries: ISeriesApi<"Line"> | undefined = $state();
+  let volumeSeries: ISeriesApi<"Histogram"> | undefined = $state();
   let activeCoin = $derived(
     app.cryptoData.find((c) => c.coin.symbol === app.coin),
   );
@@ -44,6 +48,7 @@
     visible: false,
     time: "",
     base: 0,
+    volume: 0,
     open: 0,
     high: 0,
     low: 0,
@@ -86,7 +91,15 @@
           time,
         } satisfies LineData;
       });
-
+      const volumes = prices.map((c) => {
+        const time = Math.floor(c.t / 1000) as UTCTimestamp;
+        return {
+          time,
+          value: c.v,
+          color:
+            c.c >= c.o ? "rgba(38, 166, 154, 0.5)" : "rgba(239, 83, 80, 0.5)",
+        };
+      });
       const priceSample = prices.at(-1)?.c || 0;
 
       const format = getPriceFormat(priceSample);
@@ -101,7 +114,14 @@
 
       candleSeries?.setData(ohlcs);
       candleSeries?.setData(ohlcs);
-      lineSeries?.setData(averages);
+      marketSeries?.setData(averages);
+      volumeSeries?.setData(volumes);
+      volumeSeries?.priceScale().applyOptions({
+        scaleMargins: {
+          top: 0.82,
+          bottom: 0,
+        },
+      });
       chart?.timeScale().fitContent();
     });
   });
@@ -118,7 +138,17 @@
     chart = createChart(container, {
       width: container.clientWidth,
       height: 320,
-
+      localization: {
+        priceFormatter(price: number) {
+          return formatPrice(price);
+        },
+        timeFormatter(timestamp: UTCTimestamp) {
+          return new Date(timestamp * 1000).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          });
+        },
+      },
       layout: {
         background: {
           type: ColorType.Solid,
@@ -126,7 +156,6 @@
         },
         textColor: "#d1d5db",
       },
-
       grid: {
         vertLines: {
           color: "#1f2937",
@@ -135,7 +164,6 @@
           color: "#1f2937",
         },
       },
-
       crosshair: {
         vertLine: {
           color: "#374151",
@@ -144,18 +172,15 @@
           color: "#374151",
         },
       },
-
       rightPriceScale: {
         borderColor: "#374151",
       },
-
       timeScale: {
         borderColor: "#374151",
         timeVisible: true,
         secondsVisible: false,
         fixRightEdge: true,
       },
-
       handleScale: false,
       handleScroll: false,
     });
@@ -168,14 +193,23 @@
       wickUpColor: "#26a69a",
     });
 
-    lineSeries = chart.addSeries(LineSeries, {
+    marketSeries = chart.addSeries(LineSeries, {
       color: "#a855f7",
       lineWidth: 1,
       priceLineVisible: false,
     });
 
+    volumeSeries = chart.addSeries(HistogramSeries, {
+      priceFormat: {
+        type: "volume",
+      },
+      priceScaleId: "volume",
+      priceLineVisible: false,
+      lastValueVisible: false,
+    });
+
     chart.subscribeCrosshairMove((p) => {
-      if (!container || !candleSeries || !lineSeries) {
+      if (!container || !candleSeries || !marketSeries || !volumeSeries) {
         return;
       }
 
@@ -185,13 +219,14 @@
       }
 
       const d = p.seriesData.get(candleSeries) as CandlestickData;
-      const g = p.seriesData.get(lineSeries) as LineData;
+      const g = p.seriesData.get(marketSeries) as LineData;
+      const v = p.seriesData.get(volumeSeries) as HistogramData;
 
       if (tooltipContainer) {
         shiftRightaBit = p.point.x < tooltipContainer.clientWidth + 24;
       }
 
-      if (!d || !g) {
+      if (!d || !g || !v) {
         tooltip.visible = false;
         return;
       }
@@ -202,6 +237,8 @@
         time: new Date(Number(p.time) * 1000).toLocaleString(),
 
         base: g.value,
+        volume: v.value,
+
         open: d.open,
         high: d.high,
         low: d.low,
@@ -238,7 +275,7 @@
             class:positive={activeCoin && activeCoin.performance.growth >= 0}
             class:negative={activeCoin && activeCoin.performance.growth < 0}
           >
-            {activeCoin?.price.t1}
+            {formatPrice(activeCoin?.price.t1)}
           </span>
 
           <span
@@ -259,13 +296,13 @@
 
   <div bind:this={container} class="chart-container">
     {#if tooltip.visible}
+      <!-- left calculation => left:12 width:160 padding*2:16 margin(left*2):24 = 212  -->
       <div
         bind:this={tooltipContainer}
         class="tooltip"
         class:positive={tooltip.change >= 0}
         class:negative={tooltip.change < 0}
-        style:left="{shiftRightaBit ? 224 : 12}px"
-        style:top="12px"
+        style:left="{shiftRightaBit ? 212 : 12}px"
       >
         <div class="time">
           {tooltip.time}
@@ -275,6 +312,8 @@
           <span>Base</span>
           <span class="text-purple">{formatPrice(tooltip.base)}</span>
         </div>
+
+        <div class="separator"></div>
 
         <div class="ohlc-row">
           <span>Open</span>
@@ -296,14 +335,19 @@
           <span>{formatPrice(tooltip.close)}</span>
         </div>
 
+        <div class="separator"></div>
+
         <div class="ohlc-row">
-          <span>Change</span>
-          <span>{formatPrice(tooltip.diff)}</span>
+          <span>Volume</span>
+          <span>{formatVolume(tooltip.volume)}</span>
         </div>
 
         <div class="ohlc-row">
-          <span>%</span>
-          <span>({tooltip.change.toFixed(2)}%)</span>
+          <span>Change</span>
+          <span>
+            {formatPrice(tooltip.diff)}
+            ({tooltip.change > 0 ? "+" : ""}{tooltip.change.toFixed(2)}%)
+          </span>
         </div>
       </div>
     {/if}
