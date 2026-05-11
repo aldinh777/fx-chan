@@ -1,20 +1,25 @@
 .navbar {
   display: flex;
-  gap: 16px;
+  align-items: center;
   margin-bottom: 20px;
-  border-bottom: 1px solid var(--border);
   padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-tabs {
+  position: relative;
+  display: flex;
+  gap: 16px;
 }
 
 .nav-item {
   background: none;
   border: none;
+  position: relative;
   color: var(--muted);
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
-  padding: 8px 4px;
-  position: relative;
   transition: color 0.2s ease;
 }
 
@@ -26,17 +31,20 @@
   color: var(--text);
 }
 
-/* Animated underline for the active tab */
-.nav-item.active::after {
-  content: "";
+.nav-indicator {
   position: absolute;
-  bottom: -9px; /* Align with the navbar border */
   left: 0;
-  width: 100%;
+  bottom: -9px;
   height: 2px;
-  background-color: var(--accent);
+  background: var(--accent);
+  border-radius: 999px;
+  transition:
+    transform 0.28s ease,
+    width 0.28s ease;
 }
 
 .version {
   margin-left: auto;
+  color: var(--muted);
+  font-size: 0.9rem;
 }
