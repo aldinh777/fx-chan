@@ -37,13 +37,47 @@
   let container: HTMLDivElement | undefined = $state();
   let tooltipContainer: HTMLDivElement | undefined = $state();
   let shiftRightaBit = $state(false);
+
   let chart: IChartApi | undefined = $state();
   let candleSeries: ISeriesApi<"Candlestick"> | undefined = $state();
   let marketSeries: ISeriesApi<"Line"> | undefined = $state();
   let volumeSeries: ISeriesApi<"Histogram"> | undefined = $state();
-  let activeCoin = $derived(
-    app.cryptoData.find((c) => c.coin.symbol === app.coin),
-  );
+
+  interface CoinPair {
+    symbol: string;
+    growth: number;
+    price: number;
+  }
+
+  interface CoinPair {
+    symbol: string;
+    growth: number;
+    change: number;
+    price: number;
+  }
+
+  let coinPair: CoinPair = $derived.by(() => {
+    const coin = app.cryptoData.find((c) => c.coin.symbol === app.coin);
+    const base = app.cryptoData.find((c) => c.coin.symbol === app.base);
+
+    const t1coin = coin?.price.t1 || 1;
+    const t0coin = coin?.price.t0 || 1;
+    const t1base = base?.price.t1 || 1;
+    const t0base = base?.price.t0 || 1;
+
+    const t1price = t1coin / t1base;
+    const t0price = t0coin / t0base;
+    const change = t1price - t0price;
+    const growth = change / t0price;
+
+    return {
+      symbol: `${app.coin.toUpperCase()}/${app.base.toUpperCase()}`,
+      price: t1price,
+      change,
+      growth,
+    };
+  });
+
   let tooltip: ChartTooltip = $state({
     visible: false,
     time: "",
@@ -266,28 +300,22 @@
 
       <div class="pair-info">
         <div class="symbol">
-          {app.coin.toUpperCase()}/{app.base.toUpperCase()}
+          {coinPair.symbol}
         </div>
 
-        <div class="price-row">
-          <span
-            class="price"
-            class:positive={activeCoin && activeCoin.performance.growth >= 0}
-            class:negative={activeCoin && activeCoin.performance.growth < 0}
-          >
-            {formatPrice(activeCoin?.price.t1)}
+        <div
+          class="price-row"
+          class:positive={coinPair.growth >= 0}
+          class:negative={coinPair.growth < 0}
+        >
+          <span class="price">
+            {formatPrice(coinPair.price)}
           </span>
 
-          <span
-            class:positive={activeCoin && activeCoin.performance.growth >= 0}
-            class:negative={activeCoin && activeCoin.performance.growth < 0}
-            class="change"
-          >
-            {#if activeCoin?.performance.growth != null}
-              ({activeCoin.performance.growth > 0 ? "+" : ""}{(
-                activeCoin.performance.growth * 100
-              ).toFixed(2)}%)
-            {/if}
+          <span class="change">
+            ({coinPair.growth > 0 ? "+" : ""}{(coinPair.growth * 100).toFixed(
+              2,
+            )}%)
           </span>
         </div>
       </div>
