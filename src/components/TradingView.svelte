@@ -6,12 +6,12 @@
     ColorType,
     createChart,
     HistogramSeries,
-    LineSeries,
+    // LineSeries,
     type CandlestickData,
     type HistogramData,
     type IChartApi,
     type ISeriesApi,
-    type LineData,
+    // type LineData,
     type UTCTimestamp,
   } from "lightweight-charts";
 
@@ -19,12 +19,12 @@
   import { calculatePriceAction } from "../lib/fetchers/hyperliquid";
   import { formatPrice, formatVolume, getPriceFormat } from "../lib/formatter";
   import { app } from "../stores/app.svelte";
+  import { tf } from "../stores/timeframe.svelte";
   import CryptoIcon from "./CryptoIcon.svelte";
 
   interface ChartTooltip {
     visible: boolean;
     time: string;
-    base: number;
     volume: number;
     open: number;
     high: number;
@@ -40,7 +40,7 @@
 
   let chart: IChartApi | undefined = $state();
   let candleSeries: ISeriesApi<"Candlestick"> | undefined = $state();
-  let marketSeries: ISeriesApi<"Line"> | undefined = $state();
+  // let marketSeries: ISeriesApi<"Line"> | undefined = $state();
   let volumeSeries: ISeriesApi<"Histogram"> | undefined = $state();
 
   interface CoinPair {
@@ -81,7 +81,6 @@
   let tooltip: ChartTooltip = $state({
     visible: false,
     time: "",
-    base: 0,
     volume: 0,
     open: 0,
     high: 0,
@@ -107,7 +106,7 @@
       resize();
     });
 
-    calculatePriceAction(app.coin, app.base).then(({ prices, market_avg }) => {
+    calculatePriceAction(app.coin, app.base).then(({ prices }) => {
       const ohlcs = prices.map((c) => {
         const time = Math.floor(c.t / 1000) as UTCTimestamp;
         return {
@@ -118,13 +117,6 @@
           time,
         } satisfies CandlestickData;
       });
-      const averages = market_avg.map((p, i) => {
-        const time = Math.floor(p.t / 1000) as UTCTimestamp;
-        return {
-          value: prices[i].c / p.r,
-          time,
-        } satisfies LineData;
-      });
       const volumes = prices.map((c) => {
         const time = Math.floor(c.t / 1000) as UTCTimestamp;
         return {
@@ -134,8 +126,15 @@
             c.c >= c.o ? "rgba(38, 166, 154, 0.5)" : "rgba(239, 83, 80, 0.5)",
         };
       });
-      const priceSample = prices.at(-1)?.c || 0;
+      // const averages = market_avg.map((p, i) => {
+      //   const time = Math.floor(p.t / 1000) as UTCTimestamp;
+      //   return {
+      //     value: prices[i].c / p.r,
+      //     time,
+      //   } satisfies LineData;
+      // });
 
+      const priceSample = prices.at(-1)?.c || 0;
       const format = getPriceFormat(priceSample);
 
       candleSeries?.applyOptions({
@@ -148,7 +147,7 @@
 
       candleSeries?.setData(ohlcs);
       candleSeries?.setData(ohlcs);
-      marketSeries?.setData(averages);
+      // marketSeries?.setData(averages);
       volumeSeries?.setData(volumes);
       volumeSeries?.priceScale().applyOptions({
         scaleMargins: {
@@ -157,6 +156,8 @@
         },
       });
       chart?.timeScale().fitContent();
+
+      fetchLiveData(ohlcs.at(-1), volumes.at(-1));
     });
   });
 
@@ -227,11 +228,11 @@
       wickUpColor: "#26a69a",
     });
 
-    marketSeries = chart.addSeries(LineSeries, {
-      color: "#a855f7",
-      lineWidth: 1,
-      priceLineVisible: false,
-    });
+    // marketSeries = chart.addSeries(LineSeries, {
+    //   color: "#a855f7",
+    //   lineWidth: 1,
+    //   priceLineVisible: false,
+    // });
 
     volumeSeries = chart.addSeries(HistogramSeries, {
       priceFormat: {
@@ -243,7 +244,7 @@
     });
 
     chart.subscribeCrosshairMove((p) => {
-      if (!container || !candleSeries || !marketSeries || !volumeSeries) {
+      if (!container || !candleSeries || !volumeSeries) {
         return;
       }
 
@@ -253,14 +254,13 @@
       }
 
       const d = p.seriesData.get(candleSeries) as CandlestickData;
-      const g = p.seriesData.get(marketSeries) as LineData;
       const v = p.seriesData.get(volumeSeries) as HistogramData;
 
       if (tooltipContainer) {
         shiftRightaBit = p.point.x < tooltipContainer.clientWidth + 24;
       }
 
-      if (!d || !g || !v) {
+      if (!d || !v) {
         tooltip.visible = false;
         return;
       }
@@ -270,7 +270,6 @@
 
         time: new Date(Number(p.time) * 1000).toLocaleString(),
 
-        base: g.value,
         volume: v.value,
 
         open: d.open,
@@ -283,6 +282,81 @@
       } satisfies ChartTooltip;
     });
   });
+
+  const getInterval = (t: number) => {
+    let i = 1;
+    switch (tf.active.interval) {
+      case "15m":
+        i = 15 * 60;
+        break;
+      case "1h":
+        i = 60 * 60;
+        break;
+      case "4h":
+        i = 4 * 60 * 60;
+        break;
+      case "12h":
+        i = 12 * 60 * 60;
+        break;
+      case "1d":
+        i = 24 * 60 * 60;
+        break;
+    }
+    return t - (t % (i * 1000));
+  };
+
+  function fetchLiveData(
+    lastCandle: CandlestickData | undefined,
+    lastVolume: HistogramData | undefined,
+  ) {
+    let lastInterval = getInterval((lastCandle?.time as UTCTimestamp) ?? 0);
+
+    const ws = new WebSocket("wss://api.hyperliquid.xyz/ws");
+    ws.onopen = () => {
+      ws.send(
+        JSON.stringify({
+          method: "subscribe",
+          subscription: { type: "trades", coin: "BTC" },
+        }),
+      );
+    };
+    ws.onmessage = (ev) => {
+      const socketData = JSON.parse(ev.data);
+      if (socketData.channel === "trades") {
+        for (const trade of socketData.data) {
+          const price = parseFloat(trade.px);
+          const size = parseFloat(trade.sz);
+          const volume = price * size;
+          const time = trade.time;
+          const interval = getInterval(time / 1000);
+
+          if (!lastCandle || !lastVolume || interval !== lastInterval) {
+            lastInterval = interval;
+            lastCandle = {
+              time: time as UTCTimestamp,
+              open: price,
+              high: price,
+              low: price,
+              close: price,
+            };
+            lastVolume = {
+              time: time as UTCTimestamp,
+              value: 0,
+            };
+            candleSeries?.pop(1);
+            volumeSeries?.pop(1);
+          }
+
+          lastCandle.high = Math.max(lastCandle.high, price);
+          lastCandle.low = Math.min(lastCandle.low, price);
+          lastCandle.close = price;
+          lastVolume.value += volume;
+          candleSeries?.update(lastCandle);
+          volumeSeries?.update(lastVolume);
+        }
+      }
+    };
+  }
 
   onMount(() => {
     window.addEventListener("resize", resize);
@@ -336,11 +410,6 @@
           {tooltip.time}
         </div>
 
-        <div class="ohlc-row">
-          <span>Base</span>
-          <span class="text-purple">{formatPrice(tooltip.base)}</span>
-        </div>
-
         <div class="separator"></div>
 
         <div class="ohlc-row">
@@ -366,16 +435,16 @@
         <div class="separator"></div>
 
         <div class="ohlc-row">
-          <span>Volume</span>
-          <span>{formatVolume(tooltip.volume)}</span>
-        </div>
-
-        <div class="ohlc-row">
           <span>Change</span>
           <span>
             {formatPrice(tooltip.diff)}
             ({tooltip.change > 0 ? "+" : ""}{tooltip.change.toFixed(2)}%)
           </span>
+        </div>
+
+        <div class="ohlc-row">
+          <span>Volume</span>
+          <span>{formatVolume(tooltip.volume)}</span>
         </div>
       </div>
     {/if}
