@@ -284,7 +284,7 @@
       case "1m":
         return t - (t % 60);
       case "15m":
-        return t - (t % (16 * 60));
+        return t - (t % (15 * 60));
       case "1h":
         return t - (t % (60 * 60));
       case "4h":
@@ -294,7 +294,7 @@
       case "1d":
         return t - (t % (24 * 60 * 60));
       default:
-        return 1;
+        return t - (t % 1);
     }
   };
 

@@ -98,17 +98,26 @@ export async function calculatePriceAction(
   coin: string,
   base: string,
 ): Promise<CandleData[]> {
-  const coins = await Promise.all(
-    wl.items.map(
-      async (c): Promise<Candleman> => ({
-        symbol: c.symbol,
-        candles: await fetchCoin(c.symbol),
-      }),
-    ),
+  if (coin === base) {
+    return [];
+  }
+
+  const [coinMan, baseMan] = await Promise.all(
+    [coin, base].map(async (s): Promise<Candleman | null> => {
+      const w = wl.items.find((c) => c.symbol === s);
+      return w
+        ? ({
+            symbol: w.symbol,
+            candles: await fetchCoin(w.symbol),
+          } satisfies Candleman)
+        : null;
+    }),
   );
 
-  const baseMan: Candleman | undefined = coins.find((c) => c.symbol === base);
-  const coinMan: Candleman | undefined = coins.find((c) => c.symbol === coin);
+  const baseCandles = baseMan ? baseMan.candles : coinMan?.candles;
+  if (!baseCandles) {
+    return [];
+  }
 
   const compare = (i: number, param: keyof CandleData) => {
     let basePrice = 1;
@@ -124,15 +133,10 @@ export async function calculatePriceAction(
     return coinPrice / basePrice;
   };
 
-  if (coins.length === 0) {
-    return [];
-  }
-
-  const minLength = Math.min(...coins.map((c) => c.candles.length));
   const priceCandles: CandleData[] = [];
 
-  for (let i = 0; i < minLength; i++) {
-    const { i: n, t, T } = coins[0].candles[i];
+  for (let i = 0; i < baseCandles.length; i++) {
+    const { i: n, t, T } = baseCandles[i];
 
     // price calculation logic
     const o = compare(i, "o");
