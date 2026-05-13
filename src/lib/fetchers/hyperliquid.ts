@@ -4,7 +4,7 @@ import { tf } from "./../../stores/timeframe.svelte";
 import { wl } from "./../../stores/watchlist.svelte";
 
 const API = "https://api.hyperliquid.xyz/info";
-const DAY = 24 * 60 * 60 * 1000;
+const HOURS = 60 * 60 * 1000;
 
 export interface CandleData<T = number> {
   // symbol & interval
@@ -65,7 +65,7 @@ export async function fetchCoin(symbol: string): Promise<CandleData[]> {
         req: {
           coin: symbol.toUpperCase(),
           interval: tf.active.interval,
-          startTime: now - tf.active.days * DAY,
+          startTime: now - tf.active.hours * HOURS,
           endTime: now,
         },
       }),

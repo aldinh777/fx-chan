@@ -157,7 +157,14 @@
       });
       chart?.timeScale().fitContent();
 
-      fetchLiveData(ohlcs.at(-1), volumes.at(-1));
+      lastCandle = ohlcs.at(-1);
+      lastVolume = volumes.at(-1);
+      ws.send(
+        JSON.stringify({
+          method: "subscribe",
+          subscription: { type: "trades", coin: "BTC" },
+        }),
+      );
     });
   });
 
@@ -268,7 +275,13 @@
       tooltip = {
         visible: true,
 
-        time: new Date(Number(p.time) * 1000).toLocaleString(),
+        time: new Date(Number(p.time) * 1000).toLocaleTimeString("id-ID", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
 
         volume: v.value,
 
@@ -284,85 +297,71 @@
   });
 
   const getInterval = (t: number) => {
-    let i = 1;
     switch (tf.active.interval) {
+      case "1m":
+        return t - (t % 60);
       case "15m":
-        i = 15 * 60;
-        break;
+        return t - (t % (16 * 60));
       case "1h":
-        i = 60 * 60;
-        break;
+        return t - (t % (60 * 60));
       case "4h":
-        i = 4 * 60 * 60;
-        break;
+        return t - (t % (4 * 60 * 60));
       case "12h":
-        i = 12 * 60 * 60;
-        break;
+        return t - (t % (12 * 60 * 60));
       case "1d":
-        i = 24 * 60 * 60;
-        break;
+        return t - (t % (24 * 60 * 60));
+      default:
+        return 1;
     }
-    return t - (t % (i * 1000));
   };
 
-  function fetchLiveData(
-    lastCandle: CandlestickData | undefined,
-    lastVolume: HistogramData | undefined,
-  ) {
-    let lastInterval = getInterval((lastCandle?.time as UTCTimestamp) ?? 0);
+  let lastInterval = 0;
+  let lastCandle: CandlestickData | undefined;
+  let lastVolume: HistogramData | undefined;
 
-    const ws = new WebSocket("wss://api.hyperliquid.xyz/ws");
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          method: "subscribe",
-          subscription: { type: "trades", coin: "BTC" },
-        }),
-      );
-    };
-    ws.onmessage = (ev) => {
-      const socketData = JSON.parse(ev.data);
-      if (socketData.channel === "trades") {
-        for (const trade of socketData.data) {
-          const price = parseFloat(trade.px);
-          const size = parseFloat(trade.sz);
-          const volume = price * size;
-          const time = trade.time;
-          const interval = getInterval(time / 1000);
+  const ws = $state(new WebSocket("wss://api.hyperliquid.xyz/ws"));
 
-          if (!lastCandle || !lastVolume || interval !== lastInterval) {
-            lastInterval = interval;
-            lastCandle = {
-              time: time as UTCTimestamp,
-              open: price,
-              high: price,
-              low: price,
-              close: price,
-            };
-            lastVolume = {
-              time: time as UTCTimestamp,
-              value: 0,
-            };
-            candleSeries?.pop(1);
-            volumeSeries?.pop(1);
-          }
+  ws.onmessage = (ev) => {
+    const socketData = JSON.parse(ev.data);
+    if (socketData.channel === "trades") {
+      for (const trade of socketData.data) {
+        const price = parseFloat(trade.px);
+        const size = parseFloat(trade.sz);
+        const volume = price * size;
+        const time = trade.time;
+        const interval = getInterval(time / 1000);
 
-          lastCandle.high = Math.max(lastCandle.high, price);
-          lastCandle.low = Math.min(lastCandle.low, price);
-          lastCandle.close = price;
-          lastVolume.value += volume;
-          candleSeries?.update(lastCandle);
-          volumeSeries?.update(lastVolume);
+        if (!lastCandle || !lastVolume || interval !== lastInterval) {
+          lastInterval = interval;
+          lastCandle = {
+            time: interval as UTCTimestamp,
+            open: price,
+            high: price,
+            low: price,
+            close: price,
+          };
+          lastVolume = {
+            time: interval as UTCTimestamp,
+            value: 0,
+          };
         }
+
+        lastCandle.high = Math.max(lastCandle.high, price);
+        lastCandle.low = Math.min(lastCandle.low, price);
+        lastCandle.close = price;
+        lastVolume.value += volume;
+        candleSeries?.update(lastCandle);
+        volumeSeries?.update(lastVolume);
       }
-    };
-  }
+    }
+  };
 
   onMount(() => {
     window.addEventListener("resize", resize);
     return () => {
       window.removeEventListener("resize", resize);
       chart?.remove();
+      ws.close();
     };
   });
 </script>
