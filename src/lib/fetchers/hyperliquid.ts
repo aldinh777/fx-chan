@@ -95,8 +95,8 @@ interface Candleman {
 }
 
 export async function calculatePriceAction(
-  base: string,
   coin: string,
+  base: string,
 ): Promise<CandleData[]> {
   const coins = await Promise.all(
     wl.items.map(
