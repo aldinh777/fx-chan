@@ -6,12 +6,10 @@
     ColorType,
     createChart,
     HistogramSeries,
-    // LineSeries,
     type CandlestickData,
     type HistogramData,
     type IChartApi,
     type ISeriesApi,
-    // type LineData,
     type UTCTimestamp,
   } from "lightweight-charts";
 
@@ -40,7 +38,6 @@
 
   let chart: IChartApi | undefined = $state();
   let candleSeries: ISeriesApi<"Candlestick"> | undefined = $state();
-  // let marketSeries: ISeriesApi<"Line"> | undefined = $state();
   let volumeSeries: ISeriesApi<"Histogram"> | undefined = $state();
 
   interface CoinPair {
@@ -106,7 +103,7 @@
       resize();
     });
 
-    calculatePriceAction(app.coin, app.base).then(({ prices }) => {
+    calculatePriceAction(app.coin, app.base).then((prices) => {
       const ohlcs = prices.map((c) => {
         const time = Math.floor(c.t / 1000) as UTCTimestamp;
         return {
@@ -126,13 +123,6 @@
             c.c >= c.o ? "rgba(38, 166, 154, 0.5)" : "rgba(239, 83, 80, 0.5)",
         };
       });
-      // const averages = market_avg.map((p, i) => {
-      //   const time = Math.floor(p.t / 1000) as UTCTimestamp;
-      //   return {
-      //     value: prices[i].c / p.r,
-      //     time,
-      //   } satisfies LineData;
-      // });
 
       const priceSample = prices.at(-1)?.c || 0;
       const format = getPriceFormat(priceSample);
@@ -147,7 +137,6 @@
 
       candleSeries?.setData(ohlcs);
       candleSeries?.setData(ohlcs);
-      // marketSeries?.setData(averages);
       volumeSeries?.setData(volumes);
       volumeSeries?.priceScale().applyOptions({
         scaleMargins: {
@@ -234,12 +223,6 @@
       wickDownColor: "#ef5350",
       wickUpColor: "#26a69a",
     });
-
-    // marketSeries = chart.addSeries(LineSeries, {
-    //   color: "#a855f7",
-    //   lineWidth: 1,
-    //   priceLineVisible: false,
-    // });
 
     volumeSeries = chart.addSeries(HistogramSeries, {
       priceFormat: {

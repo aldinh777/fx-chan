@@ -94,20 +94,10 @@ interface Candleman {
   candles: CandleData[];
 }
 
-interface AverageReturnPoint {
-  t: number;
-  r: number;
-}
-
-interface PriceActionResult {
-  prices: CandleData[];
-  market_avg: AverageReturnPoint[];
-}
-
 export async function calculatePriceAction(
-  coin: string,
   base: string,
-): Promise<PriceActionResult> {
+  coin: string,
+): Promise<CandleData[]> {
   const coins = await Promise.all(
     wl.items.map(
       async (c): Promise<Candleman> => ({
@@ -135,56 +125,37 @@ export async function calculatePriceAction(
   };
 
   if (coins.length === 0) {
-    return { prices: [], market_avg: [] };
+    return [];
   }
 
   const minLength = Math.min(...coins.map((c) => c.candles.length));
-  const marketAverages: AverageReturnPoint[] = [];
   const priceCandles: CandleData[] = [];
 
   for (let i = 0; i < minLength; i++) {
-    const baseCandle = coins[0].candles[i];
+    const { i: n, t, T } = coins[0].candles[i];
 
     // price calculation logic
     const o = compare(i, "o");
     const h = compare(i, "h");
-    const l = compare(i, "l");
     const c = compare(i, "c");
+    const l = compare(i, "l");
     const tp = (o + h + l + c) / 4;
 
     priceCandles.push({
-      ...baseCandle,
+      s: coinMan?.symbol ?? "usdc",
+      n: coinMan ? coinMan.candles[i].n : 0,
       v: coinMan ? coinMan.candles[i].v * tp : 0,
+      i: n,
+      t,
+      T,
       o,
       h,
       l,
       c,
     });
-
-    // market averaging logic
-    if (i === 0) {
-      marketAverages.push({ t: baseCandle.t, r: 1 });
-      continue;
-    }
-    let logSum = 0;
-    for (const coin of coins) {
-      const t0 = coin.candles[0].c;
-      const t1 = coin.candles[i].c;
-      logSum += Math.log(t1 / t0);
-    }
-    const marketScore = logSum / (coins.length + 1);
-    const priceScore =
-      Math.log(priceCandles[i].c / priceCandles[0].c) - marketScore;
-    marketAverages.push({
-      t: baseCandle.t,
-      r: Math.exp(priceScore),
-    });
   }
 
-  return {
-    prices: priceCandles,
-    market_avg: marketAverages,
-  };
+  return priceCandles;
 }
 
 export async function calculateCoin(
