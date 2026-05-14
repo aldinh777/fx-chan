@@ -9,19 +9,15 @@
   import { ensureVersionUpdate } from "./lib/version-util";
 
   import { app } from "./stores/app.svelte";
-  import { onMount } from "svelte";
   import TradingView from "./components/TradingView.svelte";
 
   ensureVersionUpdate();
 
-  $effect(() => {
-    save("base", app.base);
-    save("coin", app.coin);
-  });
+  $effect(() => save("base", app.base));
+  $effect(() => save("coin", app.coin));
   $effect(() => save("crypto", app.cryptoData));
   $effect(() => save("activeTab", app.activeTab));
-
-  onMount(() => {
+  $effect(() => {
     app.updateCrypto();
   });
 </script>
