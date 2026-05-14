@@ -126,22 +126,6 @@
               {/if}
             </div>
           {/if}
-
-          <!-- Confidence remains visible in both modes -->
-          <div class="metric">
-            <span class="metric-label">CONFIDENCE</span>
-            {#if editingRows[crypto.id]}
-              <input
-                type="number"
-                class="input small-input"
-                bind:value={crypto.confidence}
-                min="0"
-                step="0.1"
-              />
-            {:else}
-              <span class="metric-value">{crypto.confidence}</span>
-            {/if}
-          </div>
         </div>
 
         <!-- Card Actions -->

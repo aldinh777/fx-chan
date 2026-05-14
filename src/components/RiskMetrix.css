@@ -1,8 +1,35 @@
+.middle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+
+  flex: 1;
+}
+
+.holding-label {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.holding-value {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.holding-usd {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
 .metrics-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: 16px;
+  margin-top: 8px;
 }
 
 .metric-row {
@@ -74,14 +101,6 @@
   font-weight: 700;
 }
 
-.toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
 .toolbar-label {
   font-size: 0.75rem;
   color: var(--text-muted);
@@ -96,6 +115,22 @@
 .tf-buttons {
   display: flex;
   flex-wrap: wrap;
+}
+
+.holding-bar {
+  width: 80px;
+  height: 4px;
+  margin-top: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.holding-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width 0.2s ease;
 }
 
 @media (max-width: 600px) {

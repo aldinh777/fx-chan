@@ -3,7 +3,6 @@ export interface CryptoItem {
   symbol: string;
   visible: boolean;
   weight: number;
-  confidence: number;
   position: number;
 }
 
@@ -21,9 +20,10 @@ export interface WeightedPoint {
     growth: number;
     avg_growth: number;
     avg_returns: number;
-    momentum: number;
     log_ratio: number;
+    momentum: number;
     sharpe: number;
+    trend_quality: number;
   };
   volume: {
     v1: number;
@@ -60,7 +60,7 @@ export function buildRanking(points: WeightedPoint[]): AssetRanking[] {
   const marketAverage = safeDiv(marketSum, marketWeight);
 
   return points.map((p): AssetRanking => {
-    const score = (p.performance.log_ratio - marketAverage) * p.coin.confidence;
+    const score = p.performance.log_ratio - marketAverage;
     const rate = Math.exp(score) - 1;
 
     return {

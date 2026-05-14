@@ -24,7 +24,6 @@ const defaultItems = defaultCoins.map((coin) => ({
   symbol: coin,
   visible: true,
   weight: 1,
-  confidence: 1,
   position: 0,
 }));
 
@@ -50,7 +49,6 @@ class WatchlistStore {
       symbol: cleanSymbol,
       visible: true,
       weight: 1,
-      confidence: 1,
       position: 0,
     });
 
