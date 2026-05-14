@@ -96,11 +96,11 @@ interface ChartTooltip {
   change: number;
 }
 
-class Charters {
+class Chart {
   chartContainer: HTMLDivElement | undefined = $state();
-  chart = $derived(this.chartContainer && initChart(this.chartContainer));
-  candleSeries = $derived(candles(this.chart));
-  volumeSeries = $derived(volumes(this.chart));
+  chart: IChartApi | undefined = $state();
+  candleSeries = $state<ReturnType<typeof candles>>();
+  volumeSeries = $state<ReturnType<typeof volumes>>();
   tooltip: ChartTooltip = $state({
     visible: false,
     time: "",
@@ -116,8 +116,14 @@ class Charters {
   tooltipContainer: HTMLDivElement | undefined = $state();
   shiftRightaBit = $state(false);
 
-  initTooltip() {
-    this.chart?.subscribeCrosshairMove((p) => {
+  init() {
+    if (!this.chartContainer || this.chart) return;
+
+    this.chart = initChart(this.chartContainer);
+    this.candleSeries = candles(this.chart);
+    this.volumeSeries = volumes(this.chart);
+
+    this.chart.subscribeCrosshairMove((p) => {
       if (!this.chartContainer || !this.candleSeries || !this.volumeSeries) {
         return;
       }
@@ -172,4 +178,4 @@ class Charters {
   }
 }
 
-export const chart = new Charters();
+export const chart = new Chart();

@@ -46,12 +46,21 @@
     };
   });
 
+  $effect(() => chart.init());
+  $effect(() => {
+    app.chartPanel = chart.chartContainer;
+  });
+
   $effect(() => {
     requestAnimationFrame(() => {
       chart.resize();
     });
 
     calculatePriceAction(app.coin, app.base).then((prices) => {
+      if (!chart.chart || !chart.candleSeries || !chart.volumeSeries) {
+        return;
+      }
+
       const ohlcs = prices.map((c) => {
         const time = Math.floor(c.t / 1000) as UTCTimestamp;
         return {
@@ -84,7 +93,6 @@
       });
 
       chart.candleSeries?.setData(ohlcs);
-      chart.candleSeries?.setData(ohlcs);
       chart.volumeSeries?.setData(volumes);
       chart.volumeSeries?.priceScale().applyOptions({
         scaleMargins: {
@@ -96,17 +104,15 @@
     });
   });
 
-  $effect(() => {
-    app.chartPanel = chart.chartContainer;
-  });
-
-  $effect(() => chart.initTooltip());
-
+  const onResize = () => chart.resize();
   onMount(() => {
-    window.addEventListener("resize", () => chart.resize());
+    window.addEventListener("resize", onResize);
     return () => {
-      window.removeEventListener("resize", () => chart.resize());
+      window.removeEventListener("resize", onResize);
       chart.chart?.remove();
+      chart.chart = undefined;
+      chart.candleSeries = undefined;
+      chart.volumeSeries = undefined;
     };
   });
 </script>
