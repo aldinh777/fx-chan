@@ -8,62 +8,14 @@
 
   import CryptoIcon from "./CryptoIcon.svelte";
   import { app } from "../stores/app.svelte";
-  import { wl } from "../stores/watchlist.svelte";
   import { load, save } from "../lib/storage";
-  import { formatBalance, formatPrice } from "../lib/formatter";
+  import { formatPrice } from "../lib/formatter";
 
   let ranking: AssetRanking[] = $derived(buildRanking(app.points));
 
-  function getRangePercentage(current: number, low: number, high: number) {
-    if (high <= low) return 100;
-    const percentage = ((current - low) / (high - low)) * 100;
-    return Math.max(0, Math.min(100, percentage));
-  }
+  type SortKey = "return" | "momentum" | "sharpe" | "volatility" | "drawdown";
 
-  function tooltip(node: HTMLElement, text: string) {
-    let tooltipEl: HTMLDivElement | null = null;
-
-    function mouseEnter() {
-      if (tooltipEl) {
-        tooltipEl.remove();
-      }
-
-      tooltipEl = document.createElement("div");
-      tooltipEl.textContent = text;
-      tooltipEl.className = "tooltip-popup";
-      document.body.appendChild(tooltipEl);
-
-      const rect = node.getBoundingClientRect();
-      tooltipEl.style.left = `${rect.left + rect.width / 2}px`;
-      tooltipEl.style.top = `${rect.top - 10}px`;
-    }
-
-    function mouseLeave() {
-      if (tooltipEl) {
-        tooltipEl.remove();
-        tooltipEl = null;
-      }
-    }
-
-    node.addEventListener("mouseenter", mouseEnter);
-    node.addEventListener("mouseleave", mouseLeave);
-
-    return {
-      update(newText: string) {
-        text = newText;
-        if (tooltipEl) tooltipEl.textContent = text;
-      },
-      destroy() {
-        node.removeEventListener("mouseenter", mouseEnter);
-        node.removeEventListener("mouseleave", mouseLeave);
-        if (tooltipEl) tooltipEl.remove();
-      },
-    };
-  }
-
-  type SortKey = "strength" | "momentum" | "sharpe" | "volatility" | "drawdown";
-
-  let sortBy = $state<SortKey>(load("sortBy", "strength"));
+  let sortBy = $state<SortKey>(load("sortBy", "return"));
   let sortDesc = $state(load("sortDesc", true));
   $effect(() => {
     save("sortBy", sortBy);
@@ -71,18 +23,20 @@
   });
 
   const sortOptions: { label: string; value: SortKey }[] = [
-    { label: "Strength", value: "strength" },
+    { label: "Return", value: "return" },
     { label: "Momentum", value: "momentum" },
     { label: "Sharpe", value: "sharpe" },
     { label: "Volatility", value: "volatility" },
     { label: "Max DD", value: "drawdown" },
   ];
 
+  let sortItem = $derived(sortOptions.find((s) => s.value === sortBy));
+
   function getSortValue(r: AssetRanking) {
     const p = r.point;
     switch (sortBy) {
-      case "strength":
-        return r.rate;
+      case "return":
+        return p.performance.growth;
 
       case "momentum":
         return p.performance.momentum;
@@ -135,216 +89,71 @@
     </div>
   </div>
 
-  <div class="metrics-grid">
+  <div class="metrics-list">
     {#each sortedRanking as r}
       {@const p = r.point}
 
-      <div class="stat-card">
-        <!-- Card Header: Primary Info -->
-        <div class="card-header">
-          <div class="asset-info">
-            <button
-              class="btn asset-btn"
-              onclick={() => app.updateCoin(p.coin.symbol)}
-            >
-              <CryptoIcon symbol={r.symbol} size={20} />
-              {r.symbol}
-            </button>
+      <button class="metric-row" onclick={() => app.updateCoin(p.coin.symbol)}>
+        <div class="left">
+          <CryptoIcon symbol={r.symbol} size={22} />
 
-            {#if wl.mode === "position_size"}
-              <div class="asset-balance">
-                <div class="balance-amount">{p.coin.position}</div>
-                <div class="balance-usd text-muted">
-                  ${formatBalance(p.coin.position * r.current)}
-                </div>
-              </div>
-            {/if}
+          <div class="asset-meta">
+            <div class="symbol">{r.symbol}</div>
+
+            <div class="price">
+              ${formatPrice(r.current)}
+            </div>
+          </div>
+        </div>
+
+        <div class="right">
+          <div class="metric-label">
+            {sortItem?.label} ({tf.active.label})
           </div>
 
-          <div class="primary-price">
+          {#if sortBy === "return"}
             <div
-              class="current-price {p.performance.growth >= 0
+              class="metric-value {p.performance.growth >= 0
                 ? 'text-green'
                 : 'text-red'}"
             >
-              ${formatPrice(r.current)}
+              {(p.performance.growth * 100).toFixed(2)}%
             </div>
-
-            <div class="price-details">
-              <div class="detail-item text-muted">
-                <span class="detail-label help" use:tooltip={"Average Price"}>
-                  avg
-                </span>
-
-                <span class="detail-value">
-                  {formatPrice(p.price.avg)}
-                </span>
-              </div>
-
-              <div class="detail-item text-purple">
-                <span
-                  class="detail-label help"
-                  use:tooltip={"Relative Zero : Price at total market average"}
-                >
-                  base
-                </span>
-
-                <span class="detail-value">
-                  {formatPrice(r.base)}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Progress Bar for L/H Range -->
-        <div class="range-container">
-          <div class="range-labels">
-            <span class="text-muted text-small">
-              L: ${formatPrice(p.price.low)}
-            </span>
-
-            <span class="text-muted text-small">
-              ${formatPrice(p.price.high)} :H
-            </span>
-          </div>
-
-          <div class="progress-bar">
+          {:else if sortBy === "momentum"}
             <div
-              class="progress-fill {p.performance.growth < 0 && 'negative'}"
-              style="width: {getRangePercentage(
-                r.current,
-                p.price.low,
-                p.price.high,
-              )}%;"
-            ></div>
-          </div>
-
-          <div class="progress-bar">
+              class="metric-value {p.performance.momentum >= 0
+                ? 'text-green'
+                : 'text-red'}"
+            >
+              {p.performance.momentum.toFixed(2)}
+            </div>
+          {:else if sortBy === "sharpe"}
             <div
-              class="progress-fill average"
-              style="width: {getRangePercentage(
-                p.price.avg,
-                p.price.low,
-                p.price.high,
-              )}%;"
-            ></div>
-          </div>
-
-          <div class="progress-bar">
+              class="metric-value {p.performance.sharpe > 1
+                ? 'text-yellow'
+                : 'text-muted'}"
+            >
+              {p.performance.sharpe.toFixed(2)}
+            </div>
+          {:else if sortBy === "volatility"}
             <div
-              class="progress-fill relative-zero"
-              style="width: {getRangePercentage(
-                r.base,
-                p.price.low,
-                p.price.high,
-              )}%;"
-            ></div>
-          </div>
+              class="metric-value {p.risk.volatility >= 0.1
+                ? 'text-purple'
+                : 'text-muted'}"
+            >
+              {(p.risk.volatility * 100).toFixed(2)}%
+            </div>
+          {:else if sortBy === "drawdown"}
+            <div
+              class="metric-value {p.risk.max_dd > 0.1
+                ? 'text-red'
+                : 'text-muted'}"
+            >
+              -{(p.risk.max_dd * 100).toFixed(2)}%
+            </div>
+          {/if}
         </div>
-
-        <div class="card-body">
-          <div class="stats-grid">
-            <div class="stat">
-              <div
-                class="label help"
-                use:tooltip={"Performance compared to average market"}
-              >
-                Strength
-              </div>
-
-              <div class="value {r.rate >= 0 ? 'text-green' : 'text-red'}">
-                {r.rate.toFixed(2)}%
-              </div>
-            </div>
-
-            <div class="stat">
-              <div
-                class="label help"
-                use:tooltip={"Calculate how implosive recent price movement"}
-              >
-                Momentum
-              </div>
-
-              <div
-                class="value {p.performance.momentum >= 0
-                  ? 'text-green'
-                  : 'text-red'}"
-              >
-                {p.performance.momentum.toFixed(2)}
-              </div>
-            </div>
-
-            <div class="stat">
-              <span
-                class="label help"
-                use:tooltip={`Total return over ${tf.active.label}`}
-              >
-                Return
-              </span>
-
-              <div
-                class="value {p.performance.growth >= 0
-                  ? 'text-green'
-                  : 'text-red'}"
-              >
-                {p.performance.growth > 0 ? "+" : ""}{(
-                  p.performance.growth * 100
-                ).toFixed(2)}%
-              </div>
-            </div>
-
-            <div class="stat">
-              <span
-                class="label help"
-                use:tooltip={"Risk-Adjusted return ratio"}
-              >
-                Sharpe
-              </span>
-
-              <span
-                class="value {p.performance.sharpe > 1
-                  ? 'text-yellow'
-                  : 'text-muted'}"
-              >
-                {p.performance.sharpe.toFixed(2)}
-              </span>
-            </div>
-
-            <div class="stat">
-              <span
-                class="label help"
-                use:tooltip={`Average true range volatility`}
-              >
-                Volatility
-              </span>
-
-              <span
-                class="value {p.risk.volatility >= 0.1
-                  ? 'text-purple'
-                  : 'text-muted'}"
-              >
-                {(p.risk.volatility * 100).toFixed(2)}%
-              </span>
-            </div>
-
-            <div class="stat">
-              <span
-                class="label help"
-                use:tooltip={"Largest rate of price drop"}
-              >
-                Max DD
-              </span>
-
-              <span
-                class="value {p.risk.max_dd > 0.1 ? 'text-red' : 'text-muted'}"
-              >
-                -{(p.risk.max_dd * 100).toFixed(2)}%
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      </button>
     {/each}
   </div>
 </div>

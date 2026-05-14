@@ -1,199 +1,77 @@
-/* Responsive Grid Setup */
-.metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+.metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 16px;
 }
 
-.asset-info {
+.metric-row {
+  width: 100%;
+
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
+  align-items: center;
+  justify-content: space-between;
 
-.asset-balance {
-  margin-left: 0.2rem;
-  line-height: 1.1;
-}
+  padding: 12px 14px;
 
-.balance-amount {
-  padding: 0.2rem 0;
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--text-normal);
-}
-
-.balance-usd {
-  font-size: 0.72rem;
-  margin-top: 0.1rem;
-}
-
-/* Individual Card Styling */
-.stat-card {
   background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border, #333);
-  border-radius: 8px;
-  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  color: var(--text);
+  font: inherit;
+
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.metric-row:hover {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--accent);
+}
+
+.left {
   display: flex;
-  flex-direction: column;
+  align-items: center;
   gap: 12px;
 }
 
-.asset-btn {
-  font-weight: bold;
-  letter-spacing: 1px;
-  padding: 4px 12px;
+.asset-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.primary-price {
-  font-size: 1.2em;
-  font-weight: bold;
+.symbol {
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.price {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.right {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.25rem;
+  gap: 2px;
 }
 
-.price-details {
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  font-size: 0.7rem;
-  opacity: 0.8;
-}
-
-.detail-item {
-  display: flex;
-  gap: 0.25rem;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.05;
-}
-
-.detail-label {
+.metric-label {
   font-size: 0.62rem;
-  opacity: 0.65;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
 
-/* Range Bar Styles */
-.range-container {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  margin-top: 4px;
-  margin-bottom: 4px;
-}
-
-.range-labels {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85em;
-  margin-bottom: 4px;
-}
-
-.text-small {
-  font-size: 0.85em;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 3px;
-  background-color: #322632;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--accent);
-  opacity: 0.78;
-  border-radius: 4px;
-  transition: width 0.4s ease-out;
-  box-shadow: 0 0 8px var(--green);
-}
-
-.progress-fill.negative {
-  background: var(--red);
-}
-
-.progress-fill.relative-zero {
-  background: var(--purple);
-}
-
-.progress-fill.average {
-  background: var(--muted);
-}
-
-/* Card Body (Stats List) */
-.label {
-  color: var(--muted, #888);
-  font-size: 0.68rem;
-  opacity: 0.65;
-}
-
-.value {
-  font-size: 0.86rem;
-  font-weight: 600;
-  line-height: 1;
-}
-
-.stats-grid {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-}
-
-/* Specific Drawdown Badge */
-.badge-dd {
-  color: #ff565b;
-  padding: 2px 6px;
-  font-weight: bold;
-  font-size: 0.85em;
-}
-
-/* Style for labels that have help text */
-.help {
-  cursor: help;
-  text-decoration: underline dotted var(--muted);
-  text-underline-offset: 3px;
-}
-
-/* Style for the actual floating popup */
-.tooltip-popup {
-  position: fixed;
-  padding: 6px 10px;
-  background: var(--panel);
-  border: 1px solid var(--accent);
-  color: var(--text);
-  font-size: 0.75rem;
-  border-radius: 4px;
-  pointer-events: none;
-  transform: translate(-50%, -100%);
-  white-space: nowrap;
-  z-index: 1000;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-  /* Subtle glow to match neon theme */
-  filter: drop-shadow(0 0 2px var(--accent));
-}
-
-.asset-btn {
-  display: inline-flex; /* Use inline-flex so it doesn't stretch to 100% width */
-  align-items: center; /* This is the magic line for vertical centering */
-  gap: 8px; /* This handles the spacing between the icon and text */
-
-  font-weight: bold;
-  letter-spacing: 1px;
-  padding: 4px 12px;
+.metric-value {
+  font-size: 0.88rem;
+  font-weight: 700;
 }
 
 .toolbar {
@@ -201,10 +79,11 @@
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
+  gap: 10px;
 }
 
 .toolbar-label {
-  font-size: 12px;
+  font-size: 0.75rem;
   color: var(--text-muted);
 }
 
@@ -221,6 +100,10 @@
 
 @media (max-width: 600px) {
   .update-btn {
-    width: 100%; /* Full width easy-tap button on mobile */
+    width: 100%;
+  }
+
+  .metric-row {
+    padding: 10px 12px;
   }
 }

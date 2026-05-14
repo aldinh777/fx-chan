@@ -132,7 +132,7 @@
         <CryptoIcon symbol={app.coin} size={32} />
 
         <div class="pair-info">
-          <div class="symbol">
+          <div class="symbol-chart">
             {coinPair.symbol}
           </div>
 
@@ -141,7 +141,7 @@
             class:positive={coinPair.growth >= 0}
             class:negative={coinPair.growth < 0}
           >
-            <span class="price">
+            <span class="price-chart">
               {formatPrice(coinPair.price)}
             </span>
 
