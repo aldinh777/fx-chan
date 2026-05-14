@@ -46,62 +46,70 @@
     };
   });
 
+  let loading = $state(false);
+
   $effect(() => chart.init());
   $effect(() => {
     app.chartPanel = chart.chartContainer;
   });
 
   $effect(() => {
+    loading = true;
+
     requestAnimationFrame(() => {
       chart.resize();
     });
 
-    calculatePriceAction(app.coin, app.base).then((prices) => {
-      if (!chart.chart || !chart.candleSeries || !chart.volumeSeries) {
-        return;
-      }
+    calculatePriceAction(app.coin, app.base)
+      .then((prices) => {
+        if (!chart.chart || !chart.candleSeries || !chart.volumeSeries) {
+          return;
+        }
 
-      const ohlcs = prices.map((c) => {
-        const time = Math.floor(c.t / 1000) as UTCTimestamp;
-        return {
-          open: c.o,
-          high: c.h,
-          low: c.l,
-          close: c.c,
-          time,
-        } satisfies CandlestickData;
-      });
-      const volumes = prices.map((c) => {
-        const time = Math.floor(c.t / 1000) as UTCTimestamp;
-        return {
-          time,
-          value: c.v,
-          color:
-            c.c >= c.o ? "rgba(38, 166, 154, 0.5)" : "rgba(239, 83, 80, 0.5)",
-        };
-      });
+        const ohlcs = prices.map((c) => {
+          const time = Math.floor(c.t / 1000) as UTCTimestamp;
+          return {
+            open: c.o,
+            high: c.h,
+            low: c.l,
+            close: c.c,
+            time,
+          } satisfies CandlestickData;
+        });
+        const volumes = prices.map((c) => {
+          const time = Math.floor(c.t / 1000) as UTCTimestamp;
+          return {
+            time,
+            value: c.v,
+            color:
+              c.c >= c.o ? "rgba(38, 166, 154, 0.5)" : "rgba(239, 83, 80, 0.5)",
+          };
+        });
 
-      const priceSample = prices.at(-1)?.c || 0;
-      const format = getPriceFormat(priceSample);
+        const priceSample = prices.at(-1)?.c || 0;
+        const format = getPriceFormat(priceSample);
 
-      chart.candleSeries?.applyOptions({
-        priceFormat: {
-          type: "price",
-          precision: format.precision,
-          minMove: format.minMove,
-        },
-      });
+        chart.candleSeries?.applyOptions({
+          priceFormat: {
+            type: "price",
+            precision: format.precision,
+            minMove: format.minMove,
+          },
+        });
 
-      chart.candleSeries?.setData(ohlcs);
-      chart.volumeSeries?.setData(volumes);
-      chart.volumeSeries?.priceScale().applyOptions({
-        scaleMargins: {
-          top: 0.82,
-          bottom: 0,
-        },
+        chart.candleSeries?.setData(ohlcs);
+        chart.volumeSeries?.setData(volumes);
+        chart.volumeSeries?.priceScale().applyOptions({
+          scaleMargins: {
+            top: 0.82,
+            bottom: 0,
+          },
+        });
+        chart.chart?.timeScale().fitContent();
+      })
+      .finally(() => {
+        loading = false;
       });
-      chart.chart?.timeScale().fitContent();
-    });
   });
 
   const onResize = () => chart.resize();
@@ -173,6 +181,11 @@
   <TimeFrameBar />
 
   <div bind:this={chart.chartContainer} class="chart-container">
+    {#if loading}
+      <div class="loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    {/if}
     {#if chart.tooltip.visible}
       <!-- left calculation => left:12 width:100 padding*2:16 margin(left*2):24 = 212  -->
       <div
