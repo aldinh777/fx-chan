@@ -121,7 +121,6 @@ export function getFormattedMarkets(
       while (i < minLen && t1Str[i] === t0Str[i]) {
         i++;
 
-        // stop kalau beda magnitude setelah titik
         if (t1Str[i - 1] === "." && t1Int !== t0Int) {
           break;
         }
@@ -130,13 +129,22 @@ export function getFormattedMarkets(
       common = t1Str.slice(0, i);
     }
 
+    let t1Diff = t1Str.slice(common.length);
+    let t0Diff = t0Str.slice(common.length);
+
+    // limit differing decimal digits to max 3
+    if (common.includes(".")) {
+      t1Diff = t1Diff.slice(0, 3);
+      t0Diff = t0Diff.slice(0, 3);
+    }
+
     return {
       p,
       c: {
         ...c,
         common,
-        t1Diff: t1Str.slice(common.length),
-        t0Diff: t0Str.slice(common.length),
+        t1Diff,
+        t0Diff,
         growth: c.t1 / c.t0 - 1,
       },
     };
