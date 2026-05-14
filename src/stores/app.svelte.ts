@@ -7,6 +7,7 @@ import { load } from "../lib/storage";
 class AppStore {
   base = $state(load("base", "usdc"));
   coin = $state(load("coin", "usdc"));
+
   cryptoData: WeightedPoint[] = $state(load("crypto", []));
   activeTab = $state(load("activeTab", "dashboard"));
   points: WeightedPoint[] = $derived(weightPoints(this.cryptoData));
@@ -26,6 +27,12 @@ class AppStore {
         block: "center",
       });
     });
+  }
+
+  invertPair() {
+    const coin = this.coin;
+    this.coin = this.base;
+    this.base = coin;
   }
 }
 

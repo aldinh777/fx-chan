@@ -65,38 +65,33 @@ export function weightPoints(data: WeightedPoint[]) {
 export function getFormattedMarkets(
   points: WeightedPoint[],
   base: string,
-  inverted: boolean,
 ): ComputedPoint[] {
   const b = points.find((r) => r.coin.symbol === base);
 
   const mapped = points.map((p): ComputedPoint => {
     // Convert Logic
     let c;
+
     if (p.coin.symbol === base && base !== "usdc") {
       c = {
-        t0: inverted ? p.price.t0 : 1 / p.price.t0,
-        t1: inverted ? p.price.t1 : 1 / p.price.t1,
-        pair: inverted
-          ? `${p.coin.symbol.toUpperCase()}/USDC`
-          : `USDC/${p.coin.symbol.toUpperCase()}`,
+        t0: 1 / p.price.t0,
+        t1: 1 / p.price.t1,
+        pair: `USDC/${p.coin.symbol.toUpperCase()}`,
       };
     } else if (!b || base === "usdc") {
       c = {
-        t0: inverted ? 1 / p.price.t0 : p.price.t0,
-        t1: inverted ? 1 / p.price.t1 : p.price.t1,
-        pair: inverted
-          ? `${base.toUpperCase()}/${p.coin.symbol.toUpperCase()}`
-          : `${p.coin.symbol.toUpperCase()}/${base.toUpperCase()}`,
+        t0: p.price.t0,
+        t1: p.price.t1,
+        pair: `${p.coin.symbol.toUpperCase()}/${base.toUpperCase()}`,
       };
     } else {
       const t0 = p.price.t0 / b.price.t0;
       const t1 = p.price.t1 / b.price.t1;
+
       c = {
-        t0: inverted ? 1 / t0 : t0,
-        t1: inverted ? 1 / t1 : t1,
-        pair: inverted
-          ? `${base.toUpperCase()}/${p.coin.symbol.toUpperCase()}`
-          : `${p.coin.symbol.toUpperCase()}/${base.toUpperCase()}`,
+        t0,
+        t1,
+        pair: `${p.coin.symbol.toUpperCase()}/${base.toUpperCase()}`,
       };
     }
 
@@ -148,9 +143,7 @@ export function getFormattedMarkets(
   });
 
   // Sort Logic
-  mapped.sort((a, b) => {
-    return inverted ? a.c.growth - b.c.growth : b.c.growth - a.c.growth;
-  });
+  mapped.sort((a, b) => b.c.growth - a.c.growth);
 
   return mapped;
 }

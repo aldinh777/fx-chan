@@ -8,12 +8,11 @@ export interface TimeFrame {
 
 class TimeFrameStore {
   timeframes: TimeFrame[] = [
-    { label: "2h", hours: 1, interval: "1m" },
     { label: "1D", hours: 1 * 24, interval: "15m" },
     { label: "7D", hours: 7 * 24, interval: "1h" },
-    { label: "30D", hours: 30 * 24, interval: "4h" },
-    { label: "90D", hours: 90 * 24, interval: "12h" },
-    { label: "360D", hours: 360 * 24, interval: "1d" },
+    { label: "1M", hours: 30 * 24, interval: "4h" },
+    { label: "3M", hours: 90 * 24, interval: "12h" },
+    { label: "1Y", hours: 360 * 24, interval: "1d" },
   ];
   active = $state(load("timeframe", this.timeframes[2]));
 }

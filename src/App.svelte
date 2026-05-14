@@ -4,7 +4,6 @@
   import CryptoMarkets from "./components/CryptoMarkets.svelte";
   import Navbar from "./components/Navbar.svelte";
   import RiskMetrix from "./components/RiskMetrix.svelte";
-  import TimeFrameBar from "./components/TimeFrameBar.svelte";
   import Watchlist from "./components/Watchlist.svelte";
 
   import { ensureVersionUpdate } from "./lib/version-util";
@@ -31,7 +30,6 @@
 
 <main class="content-area">
   {#if app.activeTab === "dashboard" || app.activeTab === "metrics"}
-    <TimeFrameBar />
     <TradingView />
   {/if}
 

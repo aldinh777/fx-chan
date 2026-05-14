@@ -1,44 +1,15 @@
 <script lang="ts">
   import "./TradingView.css";
 
-  import {
-    CandlestickSeries,
-    ColorType,
-    createChart,
-    HistogramSeries,
-    type CandlestickData,
-    type HistogramData,
-    type IChartApi,
-    type ISeriesApi,
-    type UTCTimestamp,
-  } from "lightweight-charts";
-
+  import type { CandlestickData, UTCTimestamp } from "lightweight-charts";
   import { onMount } from "svelte";
+
   import { calculatePriceAction } from "../lib/fetchers/hyperliquid";
   import { formatPrice, formatVolume, getPriceFormat } from "../lib/formatter";
   import { app } from "../stores/app.svelte";
-  import { tf } from "../stores/timeframe.svelte";
+  import { chart } from "../stores/chart.svelte";
   import CryptoIcon from "./CryptoIcon.svelte";
-
-  interface ChartTooltip {
-    visible: boolean;
-    time: string;
-    volume: number;
-    open: number;
-    high: number;
-    low: number;
-    close: number;
-    diff: number;
-    change: number;
-  }
-
-  let container: HTMLDivElement | undefined = $state();
-  let tooltipContainer: HTMLDivElement | undefined = $state();
-  let shiftRightaBit = $state(false);
-
-  let chart: IChartApi | undefined = $state();
-  let candleSeries: ISeriesApi<"Candlestick"> | undefined = $state();
-  let volumeSeries: ISeriesApi<"Histogram"> | undefined = $state();
+  import TimeFrameBar from "./TimeFrameBar.svelte";
 
   interface CoinPair {
     symbol: string;
@@ -75,32 +46,9 @@
     };
   });
 
-  let tooltip: ChartTooltip = $state({
-    visible: false,
-    time: "",
-    volume: 0,
-    open: 0,
-    high: 0,
-    low: 0,
-    close: 0,
-    diff: 0,
-    change: 0,
-  });
-
-  const resize = () => {
-    chart?.applyOptions({
-      width: container?.clientWidth,
-    });
-    chart?.timeScale().fitContent();
-  };
-
   $effect(() => {
-    if (!chart || !candleSeries || !container) {
-      return;
-    }
-
     requestAnimationFrame(() => {
-      resize();
+      chart.resize();
     });
 
     calculatePriceAction(app.coin, app.base).then((prices) => {
@@ -127,7 +75,7 @@
       const priceSample = prices.at(-1)?.c || 0;
       const format = getPriceFormat(priceSample);
 
-      candleSeries?.applyOptions({
+      chart.candleSeries?.applyOptions({
         priceFormat: {
           type: "price",
           precision: format.precision,
@@ -135,216 +83,30 @@
         },
       });
 
-      candleSeries?.setData(ohlcs);
-      candleSeries?.setData(ohlcs);
-      volumeSeries?.setData(volumes);
-      volumeSeries?.priceScale().applyOptions({
+      chart.candleSeries?.setData(ohlcs);
+      chart.candleSeries?.setData(ohlcs);
+      chart.volumeSeries?.setData(volumes);
+      chart.volumeSeries?.priceScale().applyOptions({
         scaleMargins: {
           top: 0.82,
           bottom: 0,
         },
       });
-      chart?.timeScale().fitContent();
-
-      lastCandle = ohlcs.at(-1);
-      lastVolume = volumes.at(-1);
-      ws.send(
-        JSON.stringify({
-          method: "subscribe",
-          subscription: { type: "trades", coin: "BTC" },
-        }),
-      );
+      chart.chart?.timeScale().fitContent();
     });
   });
 
   $effect(() => {
-    app.chartPanel = container;
+    app.chartPanel = chart.chartContainer;
   });
 
-  $effect(() => {
-    if (!container || chart) {
-      return;
-    }
-
-    chart = createChart(container, {
-      width: container.clientWidth,
-      height: 320,
-      localization: {
-        priceFormatter(price: number) {
-          return formatPrice(price);
-        },
-        timeFormatter(timestamp: UTCTimestamp) {
-          return new Date(timestamp * 1000).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          });
-        },
-      },
-      layout: {
-        background: {
-          type: ColorType.Solid,
-          color: "#111827",
-        },
-        textColor: "#d1d5db",
-      },
-      grid: {
-        vertLines: {
-          color: "#1f2937",
-        },
-        horzLines: {
-          color: "#1f2937",
-        },
-      },
-      crosshair: {
-        vertLine: {
-          color: "#374151",
-        },
-        horzLine: {
-          color: "#374151",
-        },
-      },
-      rightPriceScale: {
-        borderColor: "#374151",
-      },
-      timeScale: {
-        borderColor: "#374151",
-        timeVisible: true,
-        secondsVisible: false,
-        fixRightEdge: true,
-      },
-      handleScale: false,
-      handleScroll: false,
-    });
-
-    candleSeries = chart.addSeries(CandlestickSeries, {
-      upColor: "#26a69a",
-      downColor: "#ef5350",
-      borderVisible: false,
-      wickDownColor: "#ef5350",
-      wickUpColor: "#26a69a",
-    });
-
-    volumeSeries = chart.addSeries(HistogramSeries, {
-      priceFormat: {
-        type: "volume",
-      },
-      priceScaleId: "volume",
-      priceLineVisible: false,
-      lastValueVisible: false,
-    });
-
-    chart.subscribeCrosshairMove((p) => {
-      if (!container || !candleSeries || !volumeSeries) {
-        return;
-      }
-
-      if (!p.point || !p.time || p.point.x < 0 || p.point.y < 0) {
-        tooltip.visible = false;
-        return;
-      }
-
-      const d = p.seriesData.get(candleSeries) as CandlestickData;
-      const v = p.seriesData.get(volumeSeries) as HistogramData;
-
-      if (tooltipContainer) {
-        shiftRightaBit = p.point.x < tooltipContainer.clientWidth + 24;
-      }
-
-      if (!d || !v) {
-        tooltip.visible = false;
-        return;
-      }
-
-      tooltip = {
-        visible: true,
-
-        time: new Date(Number(p.time) * 1000).toLocaleTimeString("id-ID", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit",
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-
-        volume: v.value,
-
-        open: d.open,
-        high: d.high,
-        low: d.low,
-        close: d.close,
-
-        diff: d.close - d.open,
-        change: ((d.close - d.open) / d.open) * 100,
-      } satisfies ChartTooltip;
-    });
-  });
-
-  const getInterval = (t: number) => {
-    switch (tf.active.interval) {
-      case "1m":
-        return t - (t % 60);
-      case "15m":
-        return t - (t % (15 * 60));
-      case "1h":
-        return t - (t % (60 * 60));
-      case "4h":
-        return t - (t % (4 * 60 * 60));
-      case "12h":
-        return t - (t % (12 * 60 * 60));
-      case "1d":
-        return t - (t % (24 * 60 * 60));
-      default:
-        return t - (t % 1);
-    }
-  };
-
-  let lastInterval = 0;
-  let lastCandle: CandlestickData | undefined;
-  let lastVolume: HistogramData | undefined;
-
-  const ws = $state(new WebSocket("wss://api.hyperliquid.xyz/ws"));
-
-  ws.onmessage = (ev) => {
-    const socketData = JSON.parse(ev.data);
-    if (socketData.channel === "trades") {
-      for (const trade of socketData.data) {
-        const price = parseFloat(trade.px);
-        const size = parseFloat(trade.sz);
-        const volume = price * size;
-        const time = trade.time;
-        const interval = getInterval(time / 1000);
-
-        if (!lastCandle || !lastVolume || interval !== lastInterval) {
-          lastInterval = interval;
-          lastCandle = {
-            time: interval as UTCTimestamp,
-            open: price,
-            high: price,
-            low: price,
-            close: price,
-          };
-          lastVolume = {
-            time: interval as UTCTimestamp,
-            value: 0,
-          };
-        }
-
-        lastCandle.high = Math.max(lastCandle.high, price);
-        lastCandle.low = Math.min(lastCandle.low, price);
-        lastCandle.close = price;
-        lastVolume.value += volume;
-        candleSeries?.update(lastCandle);
-        volumeSeries?.update(lastVolume);
-      }
-    }
-  };
+  $effect(() => chart.initTooltip());
 
   onMount(() => {
-    window.addEventListener("resize", resize);
+    window.addEventListener("resize", () => chart.resize());
     return () => {
-      window.removeEventListener("resize", resize);
-      chart?.remove();
-      ws.close();
+      window.removeEventListener("resize", () => chart.resize());
+      chart.chart?.remove();
     };
   });
 </script>
@@ -375,43 +137,57 @@
           </span>
         </div>
       </div>
+
+      <div class="controls">
+        <select id="base-select" bind:value={app.base}>
+          {#each app.points as p}
+            <option value={p.coin.symbol}>{p.coin.symbol.toUpperCase()}</option>
+          {/each}
+        </select>
+
+        <button class="btn invert-btn" onclick={() => app.invertPair()}>
+          INVERT
+        </button>
+      </div>
     </div>
   </div>
 
-  <div bind:this={container} class="chart-container">
-    {#if tooltip.visible}
+  <TimeFrameBar />
+
+  <div bind:this={chart.chartContainer} class="chart-container">
+    {#if chart.tooltip.visible}
       <!-- left calculation => left:12 width:160 padding*2:16 margin(left*2):24 = 212  -->
       <div
-        bind:this={tooltipContainer}
+        bind:this={chart.tooltipContainer}
         class="tooltip"
-        class:positive={tooltip.change >= 0}
-        class:negative={tooltip.change < 0}
-        style:left="{shiftRightaBit ? 212 : 12}px"
+        class:positive={chart.tooltip.change >= 0}
+        class:negative={chart.tooltip.change < 0}
+        style:left="{chart.shiftRightaBit ? 212 : 12}px"
       >
         <div class="time">
-          {tooltip.time}
+          {chart.tooltip.time}
         </div>
 
         <div class="separator"></div>
 
         <div class="ohlc-row">
           <span>Open</span>
-          <span>{formatPrice(tooltip.open)}</span>
+          <span>{formatPrice(chart.tooltip.open)}</span>
         </div>
 
         <div class="ohlc-row">
           <span>High</span>
-          <span>{formatPrice(tooltip.high)}</span>
+          <span>{formatPrice(chart.tooltip.high)}</span>
         </div>
 
         <div class="ohlc-row">
           <span>Low</span>
-          <span>{formatPrice(tooltip.low)}</span>
+          <span>{formatPrice(chart.tooltip.low)}</span>
         </div>
 
         <div class="ohlc-row">
           <span>Close</span>
-          <span>{formatPrice(tooltip.close)}</span>
+          <span>{formatPrice(chart.tooltip.close)}</span>
         </div>
 
         <div class="separator"></div>
@@ -419,14 +195,16 @@
         <div class="ohlc-row">
           <span>Change</span>
           <span>
-            {formatPrice(tooltip.diff)}
-            ({tooltip.change > 0 ? "+" : ""}{tooltip.change.toFixed(2)}%)
+            {formatPrice(chart.tooltip.diff)}
+            ({chart.tooltip.change > 0 ? "+" : ""}{chart.tooltip.change.toFixed(
+              2,
+            )}%)
           </span>
         </div>
 
         <div class="ohlc-row">
           <span>Volume</span>
-          <span>{formatVolume(tooltip.volume)}</span>
+          <span>{formatVolume(chart.tooltip.volume)}</span>
         </div>
       </div>
     {/if}

@@ -5,13 +5,10 @@
   import { tf } from "../stores/timeframe.svelte";
   import { app } from "../stores/app.svelte";
 
-  let inverted = $state(false);
-
   let computed: ComputedPoint[] = $derived(
     getFormattedMarkets(
       app.points.filter((p) => p.coin.symbol !== "usdc"),
       app.base,
-      inverted,
     ),
   );
 </script>
@@ -19,18 +16,6 @@
 <div class="panel">
   <div class="header">
     <strong>CRYPTO MARKETS</strong>
-
-    <div class="controls">
-      <select id="base-select" bind:value={app.base}>
-        {#each app.points as p}
-          <option value={p.coin.symbol}>{p.coin.symbol.toUpperCase()}</option>
-        {/each}
-      </select>
-
-      <button class="btn invert-btn" onclick={() => (inverted = !inverted)}>
-        {inverted ? "NORMAL" : "INVERT"}
-      </button>
-    </div>
   </div>
 
   <table class="table market-table" style="width: 100%;">
