@@ -118,12 +118,7 @@ class Charters {
 
   initTooltip() {
     this.chart?.subscribeCrosshairMove((p) => {
-      if (
-        !this.chartContainer ||
-        !this.tooltipContainer ||
-        !this.candleSeries ||
-        !this.volumeSeries
-      ) {
+      if (!this.chartContainer || !this.candleSeries || !this.volumeSeries) {
         return;
       }
 

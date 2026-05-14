@@ -114,34 +114,46 @@
 <div class="panel">
   <div class="chart-header">
     <div class="pair">
-      <CryptoIcon symbol={app.coin} size={32} />
+      <div class="left">
+        <CryptoIcon symbol={app.coin} size={32} />
 
-      <div class="pair-info">
-        <div class="symbol">
-          {coinPair.symbol}
-        </div>
+        <div class="pair-info">
+          <div class="symbol">
+            {coinPair.symbol}
+          </div>
 
-        <div
-          class="price-row"
-          class:positive={coinPair.growth >= 0}
-          class:negative={coinPair.growth < 0}
-        >
-          <span class="price">
-            {formatPrice(coinPair.price)}
-          </span>
+          <div
+            class="price-row"
+            class:positive={coinPair.growth >= 0}
+            class:negative={coinPair.growth < 0}
+          >
+            <span class="price">
+              {formatPrice(coinPair.price)}
+            </span>
 
-          <span class="change">
-            ({coinPair.growth > 0 ? "+" : ""}{(coinPair.growth * 100).toFixed(
-              2,
-            )}%)
-          </span>
+            <span class="change">
+              ({coinPair.growth > 0 ? "+" : ""}{(coinPair.growth * 100).toFixed(
+                2,
+              )}%)
+            </span>
+          </div>
         </div>
       </div>
 
       <div class="controls">
-        <select id="base-select" bind:value={app.base}>
+        <select bind:value={app.coin}>
           {#each app.points as p}
-            <option value={p.coin.symbol}>{p.coin.symbol.toUpperCase()}</option>
+            <option value={p.coin.symbol}>
+              {p.coin.symbol.toUpperCase()}
+            </option>
+          {/each}
+        </select>
+
+        <select bind:value={app.base}>
+          {#each app.points as p}
+            <option value={p.coin.symbol}>
+              {p.coin.symbol.toUpperCase()}
+            </option>
           {/each}
         </select>
 
@@ -156,13 +168,13 @@
 
   <div bind:this={chart.chartContainer} class="chart-container">
     {#if chart.tooltip.visible}
-      <!-- left calculation => left:12 width:160 padding*2:16 margin(left*2):24 = 212  -->
+      <!-- left calculation => left:12 width:100 padding*2:16 margin(left*2):24 = 212  -->
       <div
         bind:this={chart.tooltipContainer}
         class="tooltip"
         class:positive={chart.tooltip.change >= 0}
         class:negative={chart.tooltip.change < 0}
-        style:left="{chart.shiftRightaBit ? 212 : 12}px"
+        style:left="{chart.shiftRightaBit ? 172 : 12}px"
       >
         <div class="time">
           {chart.tooltip.time}
@@ -195,10 +207,14 @@
         <div class="ohlc-row">
           <span>Change</span>
           <span>
+            {chart.tooltip.change.toFixed(2)}%
+          </span>
+        </div>
+
+        <div class="ohlc-row">
+          <span>Diff</span>
+          <span>
             {formatPrice(chart.tooltip.diff)}
-            ({chart.tooltip.change > 0 ? "+" : ""}{chart.tooltip.change.toFixed(
-              2,
-            )}%)
           </span>
         </div>
 

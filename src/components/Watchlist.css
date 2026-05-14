@@ -2,7 +2,6 @@
 .controls {
   display: flex;
   gap: 8px;
-  margin-bottom: 24px;
 }
 
 .input {
