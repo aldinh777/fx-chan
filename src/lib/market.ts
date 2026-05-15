@@ -14,7 +14,6 @@ export interface WeightedPoint {
     avg: number;
     high: number;
     low: number;
-    base?: number;
   };
   performance: {
     growth: number;
@@ -37,18 +36,9 @@ export interface WeightedPoint {
   };
 }
 
-export interface AssetRanking {
-  point: WeightedPoint;
-  symbol: string;
-  current: number;
-  base: number;
-  score: number;
-  rate: number;
-}
-
 export const safeDiv = (a: number, b: number) => (b > 0 ? a / b : 0);
 
-export function buildRanking(points: WeightedPoint[]): AssetRanking[] {
+export function portfolioIndex(points: WeightedPoint[]): number {
   let marketWeight = 0;
   let marketSum = 0;
 
@@ -57,19 +47,5 @@ export function buildRanking(points: WeightedPoint[]): AssetRanking[] {
     marketSum += p.performance.log_ratio * p.coin.weight;
   }
 
-  const marketAverage = safeDiv(marketSum, marketWeight);
-
-  return points.map((p): AssetRanking => {
-    const score = p.performance.log_ratio - marketAverage;
-    const rate = Math.exp(score) - 1;
-
-    return {
-      point: p,
-      symbol: p.coin.symbol.toUpperCase(),
-      current: p.price.t1,
-      base: p.price.t1 / (1 + rate),
-      rate: rate * 100,
-      score: score * 100,
-    };
-  });
+  return safeDiv(marketSum, marketWeight);
 }

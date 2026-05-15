@@ -1,8 +1,6 @@
 <script lang="ts">
   import "./RiskMetrix.css";
 
-  import type { AssetRanking } from "../lib/market";
-  import { buildRanking } from "../lib/market";
   import { tf } from "../stores/timeframe.svelte";
   import { wl } from "../stores/watchlist.svelte";
 
@@ -10,11 +8,12 @@
   import { app } from "../stores/app.svelte";
   import { load, save } from "../lib/storage";
   import { formatBalance, formatPrice } from "../lib/formatter";
+  import type { WeightedPoint } from "../lib/market";
 
-  let ranking: AssetRanking[] = $derived(buildRanking(app.points));
+  let ranking: WeightedPoint[] = $derived(app.points);
   let totalPortfolioUsd = $derived(
     ranking.reduce((sum, r) => {
-      return sum + r.point.coin.position * r.current;
+      return sum + r.coin.position * r.price.t1;
     }, 0),
   );
 
@@ -37,8 +36,7 @@
 
   let sortItem = $derived(sortOptions.find((s) => s.value === sortBy));
 
-  function getSortValue(r: AssetRanking) {
-    const p = r.point;
+  function getSortValue(p: WeightedPoint) {
     switch (sortBy) {
       case "return":
         return p.performance.growth;
@@ -49,7 +47,7 @@
       case "drawdown":
         return p.risk.max_dd;
       case "holding":
-        return p.coin.position * r.current;
+        return p.coin.position * p.price.t1;
       default:
         return 0;
     }
@@ -88,21 +86,20 @@
   </div>
 
   <div class="metrics-list">
-    {#each sortedRanking as r}
-      {@const p = r.point}
-      {@const holdingUsd = p.coin.position * r.current}
+    {#each sortedRanking as p}
+      {@const holdingUsd = p.coin.position * p.price.t1}
       {@const portfolioPct =
         totalPortfolioUsd > 0 ? (holdingUsd / totalPortfolioUsd) * 100 : 0}
 
       <button class="metric-row" onclick={() => app.updateCoin(p.coin.symbol)}>
         <div class="left">
-          <CryptoIcon symbol={r.symbol} size={22} />
+          <CryptoIcon symbol={p.coin.symbol} size={22} />
 
           <div class="asset-meta">
-            <div class="symbol">{r.symbol}</div>
+            <div class="symbol">{p.coin.symbol.toUpperCase()}</div>
 
             <div class="price">
-              ${formatPrice(r.current)}
+              ${formatPrice(p.price.t1)}
             </div>
           </div>
         </div>
@@ -114,7 +111,7 @@
             </div>
 
             <div class="holding-usd">
-              ${formatBalance(p.coin.position * r.current)}
+              ${formatBalance(p.coin.position * p.price.t1)}
             </div>
           </div>
         {/if}
