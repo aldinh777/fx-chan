@@ -49,10 +49,9 @@ export interface WeightedCryptoPoint {
     growth: number;
     avg_growth: number;
     avg_returns: number;
-    log_ratio: number;
+    growth_rate: number;
     momentum: number;
     sharpe: number;
-    trend_quality: number;
   };
   volume: {
     v1: number;
@@ -74,7 +73,7 @@ export function portfolioIndex(points: WeightedCryptoPoint[]): number {
 
   for (const p of points) {
     marketWeight += p.coin.weight;
-    marketSum += p.performance.log_ratio * p.coin.weight;
+    marketSum += p.performance.growth_rate * p.coin.weight;
   }
 
   return safeDiv(marketSum, marketWeight);

@@ -17,7 +17,7 @@
     }, 0),
   );
 
-  type SortKey = "return" | "trend" | "volatility" | "drawdown" | "holding";
+  type SortKey = "return" | "momentum" | "volatility" | "drawdown" | "holding";
 
   let sortBy = $state<SortKey>(load("sortBy", "return"));
   let sortDesc = $state(load("sortDesc", true));
@@ -28,7 +28,7 @@
 
   const sortOptions: { label: string; value: SortKey }[] = [
     { label: "Return", value: "return" },
-    { label: "Trend", value: "trend" },
+    { label: "Momentum", value: "momentum" },
     { label: "Volatility", value: "volatility" },
     { label: "Max DD", value: "drawdown" },
     { label: "Holding", value: "holding" },
@@ -40,8 +40,8 @@
     switch (sortBy) {
       case "return":
         return p.performance.growth;
-      case "trend":
-        return p.performance.trend_quality;
+      case "momentum":
+        return p.performance.momentum;
       case "volatility":
         return p.risk.volatility;
       case "drawdown":
@@ -129,13 +129,13 @@
             >
               {(p.performance.growth * 100).toFixed(2)}%
             </div>
-          {:else if sortBy === "trend"}
+          {:else if sortBy === "momentum"}
             <div
-              class="metric-value {p.performance.trend_quality > 1
+              class="metric-value {p.performance.momentum > 1
                 ? 'text-yellow'
                 : 'text-muted'}"
             >
-              {p.performance.trend_quality.toFixed(2)}
+              {p.performance.momentum.toFixed(2)}
             </div>
           {:else if sortBy === "volatility"}
             <div

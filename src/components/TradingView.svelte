@@ -10,6 +10,7 @@
   import { chart } from "../stores/chart.svelte";
   import CryptoIcon from "./CryptoIcon.svelte";
   import TimeFrameBar from "./TimeFrameBar.svelte";
+  import CryptoDetail from "./CryptoDetail.svelte";
 
   interface CoinPair {
     symbol: string;
@@ -244,4 +245,6 @@
       </div>
     {/if}
   </div>
+
+  <CryptoDetail />
 </div>
