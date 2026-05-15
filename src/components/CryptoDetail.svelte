@@ -31,7 +31,7 @@
       <span
         class="text-small"
         class:text-accent={pi > 0}
-        class:text-red={pi < 0}>Portfolio Growth Rate: {pi.toFixed(3)}</span
+        class:text-red={pi < 0}>Portfolio Index: {pi.toFixed(3)}</span
       >
     </div>
 
