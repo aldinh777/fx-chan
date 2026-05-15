@@ -1,8 +1,17 @@
-import type { CryptoItem } from "../lib/market";
+import type { CryptoItem, ForexItem } from "../lib/market";
 
 import { load } from "../lib/storage";
 
 export type WeightMode = "target_weight" | "position_size";
+
+const defaultFxs = ["eur", "jpy", "gbp", "chf", "aud", "sgd", "idr"].map(
+  (f) =>
+    ({
+      id: f,
+      symbol: f,
+      visible: true,
+    }) satisfies ForexItem,
+);
 
 const defaultCoins = [
   "btc",
@@ -17,50 +26,49 @@ const defaultCoins = [
   "sui",
   "trx",
   "ada",
-];
-
-const defaultItems = defaultCoins.map((coin) => ({
-  id: coin,
-  symbol: coin,
-  visible: true,
-  weight: 1,
-  position: 0,
-}));
+].map(
+  (c) =>
+    ({
+      id: c,
+      symbol: c,
+      visible: true,
+      weight: 1,
+      position: 0,
+    }) satisfies CryptoItem,
+);
 
 class WatchlistStore {
-  items = $state<CryptoItem[]>(load("watchlist", defaultItems));
-  mode = $state<WeightMode>(load("watchlist_mode", "target_weight"));
+  fxs = $state<ForexItem[]>(load("wlFxs", defaultFxs));
+  cryptos = $state<CryptoItem[]>(load("wlCryptos", defaultCoins));
+  mode = $state<WeightMode>(load("wlMode", "target_weight"));
 
   add(symbol: string): { success: boolean; message?: string } {
     const cleanSymbol = symbol.trim().toLowerCase();
-
-    if (!cleanSymbol)
+    if (!cleanSymbol) {
       return { success: false, message: "Symbol cannot be empty." };
-
-    if (this.items.some((c) => c.symbol === cleanSymbol)) {
+    }
+    if (this.cryptos.some((c) => c.symbol === cleanSymbol)) {
       return {
         success: false,
         message: `${cleanSymbol} is already in your list!`,
       };
     }
-
-    this.items.push({
+    this.cryptos.push({
       id: cleanSymbol,
       symbol: cleanSymbol,
       visible: true,
       weight: 1,
       position: 0,
     });
-
     return { success: true };
   }
 
   remove(id: string) {
-    this.items = this.items.filter((c) => c.id !== id);
+    this.cryptos = this.cryptos.filter((c) => c.id !== id);
   }
 
   toggleVisibility(id: string) {
-    const item = this.items.find((c) => c.id === id);
+    const item = this.cryptos.find((c) => c.id === id);
     if (item) {
       item.visible = !item.visible;
     }

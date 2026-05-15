@@ -16,22 +16,21 @@
   $effect(() => save("base", app.base));
   $effect(() => save("coin", app.coin));
   $effect(() => save("crypto", app.cryptoData));
+  $effect(() => save("fx", app.fxData));
   $effect(() => save("activeTab", app.activeTab));
   $effect(() => {
     app.updateCrypto();
+    app.updateForex();
   });
 </script>
 
 <Navbar />
 
 <main class="content-area">
-  {#if app.activeTab === "dashboard" || app.activeTab === "metrics"}
-    <TradingView />
-  {/if}
-
   {#if app.activeTab === "dashboard"}
     <CryptoMarkets />
   {:else if app.activeTab === "metrics"}
+    <TradingView />
     <RiskMetrix />
   {:else if app.activeTab === "watchlist"}
     <Watchlist />

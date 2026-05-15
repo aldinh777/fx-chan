@@ -4,8 +4,9 @@
   import "./Watchlist.css";
 
   $effect(() => {
-    save("watchlist", wl.items);
-    save("watchlist_mode", wl.mode);
+    save("wlFxs", wl.fxs);
+    save("wlCryptos", wl.cryptos);
+    save("wlMode", wl.mode);
   });
 
   let newSymbol = $state("");
@@ -74,11 +75,11 @@
   </div>
 
   <div class="card-grid">
-    {#if wl.items.length === 0}
+    {#if wl.cryptos.length === 0}
       <div class="empty-state">No assets added yet.</div>
     {/if}
 
-    {#each wl.items as crypto (crypto.id)}
+    {#each wl.cryptos as crypto (crypto.id)}
       <div class="card" class:hidden-card={!crypto.visible}>
         <!-- Card Header: Symbol and Status -->
         <div class="card-header">

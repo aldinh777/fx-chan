@@ -1,4 +1,4 @@
-import { safeDiv, type WeightedPoint, type CryptoItem } from "../market";
+import { safeDiv, type WeightedCryptoPoint, type CryptoItem } from "../market";
 
 import { tf } from "./../../stores/timeframe.svelte";
 import { wl } from "./../../stores/watchlist.svelte";
@@ -30,7 +30,7 @@ const candleCache: Record<string, CandleData[]> = {};
 const awaitFetching: Set<string> = new Set();
 
 export async function fetchCoin(symbol: string): Promise<CandleData[]> {
-  const tfsymbol = `${symbol}:${tf.active.label}:${tf.active.interval}`;
+  const tfsymbol = `${symbol}:${tf.activeCrypto.label}:${tf.activeCrypto.interval}`;
 
   if (awaitFetching.has(tfsymbol)) {
     return new Promise((resolve, reject) => {
@@ -64,8 +64,8 @@ export async function fetchCoin(symbol: string): Promise<CandleData[]> {
         type: "candleSnapshot",
         req: {
           coin: symbol.toUpperCase(),
-          interval: tf.active.interval,
-          startTime: now - tf.active.hours * HOURS,
+          interval: tf.activeCrypto.interval,
+          startTime: now - tf.activeCrypto.hours * HOURS,
           endTime: now,
         },
       }),
@@ -104,7 +104,7 @@ export async function calculatePriceAction(
 
   const [coinMan, baseMan] = await Promise.all(
     [coin, base].map(async (s): Promise<Candleman | null> => {
-      const w = wl.items.find((c) => c.symbol === s);
+      const w = wl.cryptos.find((c) => c.symbol === s);
       return w
         ? ({
             symbol: w.symbol,
@@ -164,7 +164,7 @@ export async function calculatePriceAction(
 
 export async function calculateCoin(
   coin: CryptoItem,
-): Promise<WeightedPoint | null> {
+): Promise<WeightedCryptoPoint | null> {
   try {
     const candles = await fetchCoin(coin.symbol);
 
@@ -269,6 +269,6 @@ export async function calculateCoin(
 }
 
 export async function fetchAllCrypto() {
-  const res = await Promise.all(wl.items.map((c) => calculateCoin(c)));
+  const res = await Promise.all(wl.cryptos.map((c) => calculateCoin(c)));
   return res.filter((p) => p !== null);
 }

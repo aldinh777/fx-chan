@@ -1,18 +1,27 @@
-import type { WeightedPoint } from "../lib/market";
+import type { WeightedCryptoPoint, WeightedFxPoint } from "../lib/market";
 
 import { fetchAllCrypto } from "../lib/fetchers/hyperliquid";
-import { weightPoints } from "../lib/market-utils";
+import { weightCryptoPoints } from "../lib/market-utils";
 import { load } from "../lib/storage";
+import { fetchAllForex } from "../lib/fetchers/frankfurter";
 
 class AppStore {
   base = $state(load("base", "usdc"));
   coin = $state(load("coin", "usdc"));
-
-  cryptoData: WeightedPoint[] = $state(load("crypto", []));
   activeTab = $state(load("activeTab", "dashboard"));
-  points: WeightedPoint[] = $derived(weightPoints(this.cryptoData));
+
+  fxData: WeightedFxPoint[] = $state(load("fx", []));
+
+  cryptoData: WeightedCryptoPoint[] = $state(load("crypto", []));
+  cryptoPoints: WeightedCryptoPoint[] = $derived(
+    weightCryptoPoints(this.cryptoData),
+  );
 
   chartPanel: HTMLDivElement | undefined = $state();
+
+  async updateForex() {
+    this.fxData = await fetchAllForex();
+  }
 
   async updateCrypto() {
     this.cryptoData = await fetchAllCrypto();
@@ -20,7 +29,6 @@ class AppStore {
 
   updateCoin(coin: string) {
     this.coin = coin;
-
     requestAnimationFrame(() => {
       this.chartPanel?.scrollIntoView({
         behavior: "smooth",
@@ -29,7 +37,7 @@ class AppStore {
     });
   }
 
-  invertPair() {
+  invertCryptoPair() {
     const coin = this.coin;
     this.coin = this.base;
     this.base = coin;

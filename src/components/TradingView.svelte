@@ -156,7 +156,7 @@
 
       <div class="controls">
         <select bind:value={app.coin}>
-          {#each app.points as p}
+          {#each app.cryptoPoints as p}
             <option value={p.coin.symbol}>
               {p.coin.symbol.toUpperCase()}
             </option>
@@ -164,14 +164,14 @@
         </select>
 
         <select bind:value={app.base}>
-          {#each app.points as p}
+          {#each app.cryptoPoints as p}
             <option value={p.coin.symbol}>
               {p.coin.symbol.toUpperCase()}
             </option>
           {/each}
         </select>
 
-        <button class="btn invert-btn" onclick={() => app.invertPair()}>
+        <button class="btn invert-btn" onclick={() => app.invertCryptoPair()}>
           INVERT
         </button>
       </div>

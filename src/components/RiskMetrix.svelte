@@ -8,9 +8,9 @@
   import { app } from "../stores/app.svelte";
   import { load, save } from "../lib/storage";
   import { formatBalance, formatPrice } from "../lib/formatter";
-  import type { WeightedPoint } from "../lib/market";
+  import type { WeightedCryptoPoint } from "../lib/market";
 
-  let ranking: WeightedPoint[] = $derived(app.points);
+  let ranking: WeightedCryptoPoint[] = $derived(app.cryptoPoints);
   let totalPortfolioUsd = $derived(
     ranking.reduce((sum, r) => {
       return sum + r.coin.position * r.price.t1;
@@ -36,7 +36,7 @@
 
   let sortItem = $derived(sortOptions.find((s) => s.value === sortBy));
 
-  function getSortValue(p: WeightedPoint) {
+  function getSortValue(p: WeightedCryptoPoint) {
     switch (sortBy) {
       case "return":
         return p.performance.growth;
@@ -64,7 +64,7 @@
 </script>
 
 <div class="panel">
-  <strong>COOL STATISTICS ({tf.active.label})</strong>
+  <strong>COOL STATISTICS ({tf.activeCrypto.label})</strong>
 
   <div class="timeframe-selector">
     <span class="toolbar-label">Sort By:</span>
@@ -118,7 +118,7 @@
 
         <div class="right">
           <div class="metric-label">
-            {sortItem?.label} ({tf.active.label})
+            {sortItem?.label} ({tf.activeCrypto.label})
           </div>
 
           {#if sortBy === "return"}
