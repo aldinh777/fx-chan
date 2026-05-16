@@ -1,6 +1,14 @@
-/* --- Panel & Controls --- */
-.controls {
+.mode-toggle-bar {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* --- Panel & Controls --- */
+.controls-p {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 12px 0px;
   gap: 8px;
 }
 

@@ -26,17 +26,16 @@
   <div class="info-panel">
     <div class="row">
       <button class="btn info-title" onclick={() => (expand = !expand)}>
-        Market Intelligence
+        Info
       </button>
-      <span
-        class="text-small"
-        class:text-accent={pi > 0}
-        class:text-red={pi < 0}>Portfolio Index: {pi.toFixed(3)}</span
-      >
+      <div class="card" class:text-accent={pi > 0} class:text-red={pi < 0}>
+        <div class="v r">Portfolio Index {pi.toFixed(3)}</div>
+      </div>
     </div>
 
     {#if expand}
       {@const fibo = fibr(coin.price.low, coin.price.high)}
+
       <div class="section">
         <div class="range-container">
           <div class="range-labels">
@@ -85,8 +84,8 @@
             <div class="k">Fibonacci</div>
             <div class="v">
               <span class="text-green">{formatPrice(fibo.up)}</span>/<span
-                class="text-red">{formatPrice(fibo.down)}</span
-              >
+                class="text-muted">{formatPrice(coin.price.t1)}</span
+              >/<span class="text-red">{formatPrice(fibo.down)}</span>
             </div>
           </div>
         </div>
@@ -96,15 +95,14 @@
       <div class="section">
         <div class="section-title">Performance</div>
         <div class="grid">
-          <div class="card highlight">
-            <div
-              class="k"
-              class:positive={coin.performance.growth >= 0}
-              class:negative={coin.performance.growth < 0}
-            >
-              Growth
-            </div>
-            <div class="v">{(coin.performance.growth * 100).toFixed(2)}%</div>
+          <div class="card">
+            <div class="k">Momentum</div>
+            <div class="v">{coin.performance.momentum.toFixed(3)}</div>
+          </div>
+
+          <div class="card">
+            <div class="k">Sharpe</div>
+            <div class="v">{coin.performance.sharpe.toFixed(3)}</div>
           </div>
 
           <div class="card">
@@ -114,14 +112,15 @@
             </div>
           </div>
 
-          <div class="card">
-            <div class="k">Momentum</div>
-            <div class="v">{coin.performance.momentum.toFixed(3)}</div>
-          </div>
-
-          <div class="card">
-            <div class="k">Sharpe</div>
-            <div class="v">{coin.performance.sharpe.toFixed(3)}</div>
+          <div class="card highlight">
+            <div class="k">Growth</div>
+            <div
+              class="v"
+              class:positive={coin.performance.growth >= 0}
+              class:negative={coin.performance.growth < 0}
+            >
+              {(coin.performance.growth * 100).toFixed(2)}%
+            </div>
           </div>
         </div>
       </div>
@@ -158,11 +157,11 @@
         <div class="grid">
           <div class="card">
             <div class="k">Volatility</div>
-            <div class="v">{coin.risk.volatility.toFixed(3)}</div>
+            <div class="v">{(coin.risk.volatility * 100).toFixed(2)}%</div>
           </div>
 
           <div class="card danger">
-            <div class="k">Max DD</div>
+            <div class="k">Max Drawdown</div>
             <div class="v">{(coin.risk.max_dd * 100).toFixed(2)}%</div>
           </div>
         </div>
@@ -176,6 +175,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
   }
 
   .info-panel {
@@ -215,17 +215,24 @@
     border-radius: 10px;
     background: rgba(0, 0, 0, 0.25);
     border: 1px solid rgba(255, 255, 255, 0.06);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   .card .k {
     font-size: 10px;
     opacity: 0.5;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
   }
 
   .card .v {
     font-size: 12px;
     font-weight: 500;
+  }
+
+  .card .r {
+    text-align: right;
   }
 
   .highlight {

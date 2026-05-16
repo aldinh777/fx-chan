@@ -45,14 +45,7 @@
 </script>
 
 <div class="panel">
-  <div class="header">
-    <strong>MY WATCHLIST</strong>
-  </div>
-
-  <div
-    class="mode-toggle-bar"
-    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0.5rem; background: rgba(0,0,0,0.05); border-radius: 8px;"
-  >
+  <div class="mode-toggle-bar">
     <span>
       <strong
         >CURRENT MODE : {wl.mode === "target_weight"
@@ -60,10 +53,10 @@
           : "PORTFOLIO"}</strong
       >
     </span>
-    <button class="btn" onclick={toggleMode}>SWITCH MODE </button>
+    <button class="btn" onclick={toggleMode}>SWITCH MODE</button>
   </div>
 
-  <div class="controls">
+  <div class="controls-p">
     <input
       type="text"
       class="input"
@@ -80,8 +73,8 @@
     {/if}
 
     {#each wl.cryptos as crypto (crypto.id)}
-      <div class="card" class:hidden-card={!crypto.visible}>
-        <!-- Card Header: Symbol and Status -->
+      <!-- Card Header: Symbol and Status -->
+      <div class="card-wl" class:hidden-card={!crypto.visible}>
         <div class="card-header">
           <strong class="asset-symbol">{crypto.symbol.toUpperCase()}</strong>
           <span
@@ -96,8 +89,8 @@
         <!-- Card Body: Editable Metrics -->
         <div class="card-body">
           {#if wl.mode === "target_weight"}
-            <div class="metric">
-              <span class="metric-label">TARGET WEIGHT</span>
+            <div class="metric-p">
+              <span class="metric-label-p">TARGET WEIGHT</span>
               {#if editingRows[crypto.id]}
                 <input
                   type="number"
@@ -107,12 +100,12 @@
                   step="0.1"
                 />
               {:else}
-                <span class="metric-value">{crypto.weight}</span>
+                <span class="metric-value-p">{crypto.weight}</span>
               {/if}
             </div>
           {:else}
-            <div class="metric">
-              <span class="metric-label">HOLDINGS (QTY)</span>
+            <div class="metric-p">
+              <span class="metric-label-p">HOLDINGS (QTY)</span>
               {#if editingRows[crypto.id]}
                 <!-- Note: Step is much smaller here to accommodate token fractions -->
                 <input
@@ -123,7 +116,7 @@
                   step="0.0001"
                 />
               {:else}
-                <span class="metric-value">{crypto.position || 0}</span>
+                <span class="metric-value-p">{crypto.position || 0}</span>
               {/if}
             </div>
           {/if}
