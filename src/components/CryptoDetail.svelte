@@ -228,7 +228,7 @@
                 {(coin.risk.max_rally * 100).toFixed(2)}%
               </span>
               <span class="text-muted">
-                [{formatPrice(coin.risk.rally_low)} => ${formatPrice(
+                [{formatPrice(coin.risk.rally_low)}/{formatPrice(
                   coin.risk.rally_high,
                 )}]
               </span>
@@ -242,7 +242,7 @@
                 {(coin.risk.max_dd * 100).toFixed(2)}%
               </span>
               <span class="text-muted">
-                [{formatPrice(coin.risk.dd_high)} => ${formatPrice(
+                [{formatPrice(coin.risk.dd_high)}/{formatPrice(
                   coin.risk.dd_low,
                 )}]
               </span>
