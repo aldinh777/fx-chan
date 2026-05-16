@@ -84,7 +84,11 @@
             <div class="k">Fibonacci</div>
             <div class="v">
               <span class="text-green">{formatPrice(fibo.up)}</span>/<span
-                class="text-muted">{formatPrice(coin.price.t1)}</span
+                class={coin.price.t1 < fibo.up
+                  ? "text-green hail"
+                  : coin.price.t1 > fibo.down
+                    ? "text-red hail"
+                    : "hail"}>{formatPrice(coin.price.t1)}</span
               >/<span class="text-red">{formatPrice(fibo.down)}</span>
             </div>
           </div>
@@ -176,6 +180,11 @@
     justify-content: space-between;
     align-items: center;
     gap: 8px;
+  }
+
+  .hail {
+    opacity: 0.816;
+    font-weight: 700;
   }
 
   .info-panel {
