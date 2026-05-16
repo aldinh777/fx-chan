@@ -61,7 +61,12 @@ export interface WeightedCryptoPoint {
   };
   risk: {
     max_dd: number;
+    max_rally: number;
     volatility: number;
+    dd_high: number;
+    dd_low: number;
+    rally_high: number;
+    rally_low: number;
   };
 }
 

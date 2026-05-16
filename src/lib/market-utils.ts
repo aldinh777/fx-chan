@@ -51,7 +51,15 @@ const usdc: WeightedCryptoPoint = {
     momentum: 0,
     sharpe: 0,
   },
-  risk: { max_dd: 0, volatility: 0 },
+  risk: {
+    max_dd: 0,
+    max_rally: 0,
+    volatility: 0,
+    dd_high: 0,
+    dd_low: 0,
+    rally_high: 0,
+    rally_low: 0,
+  },
   volume: { v1: 0, vol: 0, avg: 0, intensity: 0 },
 };
 

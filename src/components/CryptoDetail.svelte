@@ -13,13 +13,23 @@
   const phi = (1 + Math.sqrt(5)) / 2;
   const ret_phi = 1 / phi;
 
-  function fibr(low: number, high: number) {
-    const r = high - low;
+  function bullRetrace(rally_low: number, rally_high: number) {
+    const r = rally_high - rally_low;
     return {
-      ext_up: high - r * phi,
-      up: high - r * ret_phi,
-      down: low + r * ret_phi,
-      ext_down: low + r * phi,
+      // 0.618 pullback
+      normal: rally_high - r * ret_phi,
+      // 1.618 bearish extension
+      extended: rally_high - r * phi,
+    };
+  }
+
+  function bearRetrace(dd_high: number, dd_low: number) {
+    const r = dd_high - dd_low;
+    return {
+      // 0.618 bounce
+      normal: dd_low + r * ret_phi,
+      // 1.618 bullish extension
+      extended: dd_low + r * phi,
     };
   }
 
@@ -42,7 +52,8 @@
     </div>
 
     {#if expand}
-      {@const fibo = fibr(coin.price.low, coin.price.high)}
+      {@const bullFib = bullRetrace(coin.risk.rally_low, coin.risk.rally_high)}
+      {@const bearFib = bearRetrace(coin.risk.dd_high, coin.risk.dd_low)}
 
       <div class="section">
         <div class="range-container">
@@ -97,13 +108,13 @@
             <div class="k">Fibonacci</div>
             <div class="v">
               <span class="text-green">
-                {formatPrice(fibo.up)}
+                {formatPrice(bullFib.normal)}
               </span>
               /
               <span
-                class={coin.price.t1 < fibo.up
+                class={coin.price.t1 < bullFib.normal
                   ? "text-green hail"
-                  : coin.price.t1 > fibo.down
+                  : coin.price.t1 > bearFib.normal
                     ? "text-red hail"
                     : "hail"}
               >
@@ -111,7 +122,7 @@
               </span>
               /
               <span class="text-red">
-                {formatPrice(fibo.down)}
+                {formatPrice(bearFib.normal)}
               </span>
             </div>
           </div>
@@ -120,13 +131,13 @@
             <div class="k">Extended</div>
             <div class="v">
               <span class="text-green">
-                {formatPrice(fibo.ext_up)}
+                {formatPrice(bullFib.extended)}
               </span>
               /
               <span
-                class={coin.price.t1 < fibo.ext_up
+                class={coin.price.t1 < bullFib.extended
                   ? "text-green hail"
-                  : coin.price.t1 > fibo.ext_down
+                  : coin.price.t1 > bearFib.extended
                     ? "text-red hail"
                     : "hail"}
               >
@@ -134,7 +145,7 @@
               </span>
               /
               <span class="text-red">
-                {formatPrice(fibo.ext_down)}
+                {formatPrice(bearFib.extended)}
               </span>
             </div>
           </div>
@@ -210,9 +221,32 @@
             <div class="v">{(coin.risk.volatility * 100).toFixed(2)}%</div>
           </div>
 
+          <div class="card">
+            <div class="k">Max Rally</div>
+            <div class="v">
+              <span class="text-green">
+                {(coin.risk.max_rally * 100).toFixed(2)}%
+              </span>
+              <span class="text-muted">
+                [{formatPrice(coin.risk.rally_low)} => ${formatPrice(
+                  coin.risk.rally_high,
+                )}]
+              </span>
+            </div>
+          </div>
+
           <div class="card danger">
             <div class="k">Max Drawdown</div>
-            <div class="v">{(coin.risk.max_dd * 100).toFixed(2)}%</div>
+            <div class="v">
+              <span class="text-red">
+                {(coin.risk.max_dd * 100).toFixed(2)}%
+              </span>
+              <span class="text-muted">
+                [{formatPrice(coin.risk.dd_high)} => ${formatPrice(
+                  coin.risk.dd_low,
+                )}]
+              </span>
+            </div>
           </div>
         </div>
       </div>

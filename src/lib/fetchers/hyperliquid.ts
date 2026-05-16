@@ -181,6 +181,14 @@ export async function calculateCoin(
 
     let peak = 0;
     let max_dd = 0;
+    let dd_high = 0;
+    let dd_low = 0;
+
+    let trough = Infinity;
+    let max_rally = 0;
+    let rally_low = 0;
+    let rally_high = 0;
+
     let high = -Infinity;
     let low = Infinity;
     let sum = 0;
@@ -203,9 +211,24 @@ export async function calculateCoin(
       if (h > peak) {
         peak = h;
       }
-      if (peak > 0) {
-        const drawdown = (peak - l) / peak;
-        if (drawdown > max_dd) max_dd = drawdown;
+      const drawdown = peak > 0 ? (peak - l) / peak : 0;
+      if (drawdown > max_dd) {
+        max_dd = drawdown;
+
+        dd_high = peak;
+        dd_low = l;
+      }
+
+      // Max Rally Logic
+      if (l < trough) {
+        trough = l;
+      }
+      const rally = (h - trough) / trough;
+      if (rally > max_rally) {
+        max_rally = rally;
+
+        rally_low = trough;
+        rally_high = h;
       }
 
       // High, Low, Avg Logic
@@ -256,7 +279,15 @@ export async function calculateCoin(
         momentum,
         sharpe,
       },
-      risk: { max_dd, volatility },
+      risk: {
+        max_dd,
+        max_rally,
+        volatility,
+        dd_high,
+        dd_low,
+        rally_high,
+        rally_low,
+      },
       volume: { v1, vol: volume, avg: avg_volume, intensity },
     };
   } catch {
