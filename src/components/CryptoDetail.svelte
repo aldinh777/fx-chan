@@ -10,9 +10,17 @@
   let expand = $state(true);
   let pi = $derived(portfolioIndex(app.cryptoPoints));
 
+  const phi = (1 + Math.sqrt(5)) / 2;
+  const ret_phi = 1 / phi;
+
   function fibr(low: number, high: number) {
     const r = high - low;
-    return { up: high - 0.618 * r, down: high - 0.382 * r };
+    return {
+      ext_up: high - r * phi,
+      up: high - r * ret_phi,
+      down: low + r * ret_phi,
+      ext_down: low + r * phi,
+    };
   }
 
   function getRangePercentage(current: number, low: number, high: number) {
@@ -79,17 +87,55 @@
             <div class="k">Average</div>
             <div class="v">{formatPrice(coin.price.avg)}</div>
           </div>
+        </div>
+      </div>
 
+      <div class="section">
+        <div class="section-title">Retracement</div>
+        <div class="grid">
           <div class="card">
             <div class="k">Fibonacci</div>
             <div class="v">
-              <span class="text-green">{formatPrice(fibo.up)}</span>/<span
+              <span class="text-green">
+                {formatPrice(fibo.up)}
+              </span>
+              /
+              <span
                 class={coin.price.t1 < fibo.up
                   ? "text-green hail"
                   : coin.price.t1 > fibo.down
                     ? "text-red hail"
-                    : "hail"}>{formatPrice(coin.price.t1)}</span
-              >/<span class="text-red">{formatPrice(fibo.down)}</span>
+                    : "hail"}
+              >
+                {formatPrice(coin.price.t1)}
+              </span>
+              /
+              <span class="text-red">
+                {formatPrice(fibo.down)}
+              </span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="k">Extended</div>
+            <div class="v">
+              <span class="text-green">
+                {formatPrice(fibo.ext_up)}
+              </span>
+              /
+              <span
+                class={coin.price.t1 < fibo.ext_up
+                  ? "text-green hail"
+                  : coin.price.t1 > fibo.ext_down
+                    ? "text-red hail"
+                    : "hail"}
+              >
+                {formatPrice(coin.price.t1)}
+              </span>
+              /
+              <span class="text-red">
+                {formatPrice(fibo.ext_down)}
+              </span>
             </div>
           </div>
         </div>
@@ -183,7 +229,7 @@
   }
 
   .hail {
-    opacity: 0.816;
+    opacity: 0.618;
     font-weight: 700;
   }
 
