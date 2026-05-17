@@ -56,6 +56,12 @@
     {#if expand}
       {@const bullFib = bullRetrace(coin.risk.rally_low, coin.risk.rally_high)}
       {@const bearFib = bearRetrace(coin.risk.dd_high, coin.risk.dd_low)}
+      {@const bullRatio =
+        (coin.risk.rally_high - coin.price.t1) /
+        (coin.risk.rally_high - coin.risk.rally_low)}
+      {@const bearRatio =
+        (coin.price.t1 - coin.risk.dd_low) /
+        (coin.risk.dd_high - coin.risk.dd_low)}
 
       <div class="section">
         <div class="range-container">
@@ -87,9 +93,16 @@
         <div class="section-title">Price Action</div>
         <div class="grid">
           <div class="card">
-            <div class="k">First / Last</div>
+            <div class="k">Last</div>
             <div class="v">
-              {formatPrice(coin.price.t0)} / {formatPrice(coin.price.t1)}
+              {formatPrice(coin.price.t1)}
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="k">Previous</div>
+            <div class="v">
+              {formatPrice(coin.price.t0)}
             </div>
           </div>
 
@@ -102,69 +115,69 @@
 
       <!-- RETRACEMENT -->
       <div class="section">
-        <div class="section-title">Retracement</div>
+        <div class="section-title">Rally Retracement</div>
         <div class="grid">
           <div class="card">
-            <div class="k">Rally Range</div>
+            <div class="k">Rally Low</div>
             <div class="v">
-              {formatPrice(coin.risk.rally_low)} - {formatPrice(
-                coin.risk.rally_high,
-              )}
+              {formatPrice(coin.risk.rally_low)}
             </div>
           </div>
 
           <div class="card">
-            <div class="k">&phi; : &phi;⁻¹ : current</div>
+            <div class="k">Rally High</div>
             <div class="v">
-              <span class="text-red">
-                {formatPrice(bullFib.extended)}
-              </span>
-              :
-              <span class="text-green">
-                {formatPrice(bullFib.normal)}
-              </span>
-              :
-              <span
-                class={coin.price.t1 < bullFib.extended
-                  ? "text-red hail"
-                  : coin.price.t1 < bullFib.normal
-                    ? "text-green hail"
-                    : "hail"}
-              >
-                {formatPrice(coin.price.t1)}
-              </span>
+              {formatPrice(coin.risk.rally_high)}
             </div>
+          </div>
+
+          <div class="card">
+            <div class="k">&phi;</div>
+            <div class="v">{formatPrice(bullFib.extended)}</div>
+          </div>
+
+          <div class="card">
+            <div class="k">&phi;⁻¹</div>
+            <div class="v">{formatPrice(bullFib.normal)}</div>
+          </div>
+
+          <div class="card">
+            <div class="k">Ratio</div>
+            <div class="v">{bullRatio.toFixed(3)}</div>
           </div>
         </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Drawdown Retracement</div>
         <div class="grid">
           <div class="card">
-            <div class="k">Drawdown Range</div>
+            <div class="k">Drawdown Low</div>
             <div class="v">
-              {formatPrice(coin.risk.dd_high)} - {formatPrice(coin.risk.dd_low)}
+              {formatPrice(coin.risk.dd_high)}
             </div>
           </div>
 
           <div class="card">
-            <div class="k">&phi; : &phi;⁻¹ : current</div>
+            <div class="k">Drawdown High</div>
             <div class="v">
-              <span class="text-red">
-                {formatPrice(bearFib.extended)}
-              </span>
-              :
-              <span class="text-green">
-                {formatPrice(bearFib.normal)}
-              </span>
-              :
-              <span
-                class={coin.price.t1 > bearFib.extended
-                  ? "text-red hail"
-                  : coin.price.t1 > bearFib.normal
-                    ? "text-green hail"
-                    : "hail"}
-              >
-                {formatPrice(coin.price.t1)}
-              </span>
+              {formatPrice(coin.risk.dd_low)}
             </div>
+          </div>
+
+          <div class="card">
+            <div class="k">&phi;</div>
+            <div class="v">{formatPrice(bearFib.extended)}</div>
+          </div>
+
+          <div class="card">
+            <div class="k">&phi;⁻¹</div>
+            <div class="v">{formatPrice(bearFib.normal)}</div>
+          </div>
+
+          <div class="card">
+            <div class="k">Ratio</div>
+            <div class="v">{bearRatio.toFixed(3)}</div>
           </div>
         </div>
       </div>
