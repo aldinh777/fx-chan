@@ -108,7 +108,7 @@
             <div class="k">Rally Range</div>
             <div class="v">
               {formatPrice(coin.risk.rally_low)} - {formatPrice(
-                coin.risk.dd_high,
+                coin.risk.rally_high,
               )}
             </div>
           </div>
