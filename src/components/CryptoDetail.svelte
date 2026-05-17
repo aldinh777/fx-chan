@@ -114,7 +114,7 @@
           </div>
 
           <div class="card">
-            <div class="k">&phi; : 1/&phi; : current</div>
+            <div class="k">&phi; : &phi;⁻¹ : current</div>
             <div class="v">
               <span class="text-red">
                 {formatPrice(bullFib.extended)}
@@ -145,7 +145,7 @@
           </div>
 
           <div class="card">
-            <div class="k">&phi; : 1/&phi; : current</div>
+            <div class="k">&phi; : &phi;⁻¹ : current</div>
             <div class="v">
               <span class="text-red">
                 {formatPrice(bearFib.extended)}
