@@ -118,14 +118,14 @@
         <div class="section-title">Rally Retracement</div>
         <div class="grid">
           <div class="card">
-            <div class="k">Rally Low</div>
+            <div class="k">Low</div>
             <div class="v">
               {formatPrice(coin.risk.rally_low)}
             </div>
           </div>
 
           <div class="card">
-            <div class="k">Rally High</div>
+            <div class="k">High</div>
             <div class="v">
               {formatPrice(coin.risk.rally_high)}
             </div>
@@ -152,14 +152,14 @@
         <div class="section-title">Drawdown Retracement</div>
         <div class="grid">
           <div class="card">
-            <div class="k">Drawdown Low</div>
+            <div class="k">Low</div>
             <div class="v">
               {formatPrice(coin.risk.dd_high)}
             </div>
           </div>
 
           <div class="card">
-            <div class="k">Drawdown High</div>
+            <div class="k">High</div>
             <div class="v">
               {formatPrice(coin.risk.dd_low)}
             </div>
