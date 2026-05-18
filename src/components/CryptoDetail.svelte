@@ -353,17 +353,17 @@
           <div class="section-title">Volume</div>
           <div class="grid">
             <div class="card">
-              <div class="k">Total Volume</div>
+              <div class="k">Total</div>
               <div class="v">{formatVolume(coin.volume.vol)}</div>
             </div>
 
             <div class="card">
-              <div class="k">Avg Vol</div>
+              <div class="k">Average</div>
               <div class="v">{formatVolume(coin.volume.avg)}</div>
             </div>
 
             <div class="card">
-              <div class="k">Recent Volume</div>
+              <div class="k">Last</div>
               <div class="v">{formatVolume(coin.volume.v1)}</div>
             </div>
 
