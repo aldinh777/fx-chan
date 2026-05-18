@@ -4,13 +4,14 @@
   import { formatPrice, formatVolume } from "../lib/formatter";
   import { portfolioIndex, type WeightedCryptoPoint } from "../lib/market";
   import { app } from "../stores/app.svelte";
+  import { wl } from "../stores/watchlist.svelte";
+  import { correlation } from "../lib/quant";
 
   const coin: WeightedCryptoPoint | undefined = $derived(
     app.cryptoData.find((c) => c.coin.symbol === app.coin),
   );
 
-  let expand = $state(true);
-  let tab = $state("info");
+  let tab = $state("relational");
   let pi = $derived(portfolioIndex(app.cryptoPoints));
 
   const phi = (1 + Math.sqrt(5)) / 2;
@@ -41,6 +42,32 @@
     const percentage = ((current - low) / (high - low)) * 100;
     return Math.max(0, Math.min(100, percentage));
   }
+
+  interface Pair {
+    pair: string;
+    corr: number;
+  }
+  let pairs: Pair[] = $state([]);
+
+  async function calculatePairs() {
+    if (!coin) {
+      return;
+    }
+    const pq = [];
+    for (const c of wl.cryptos) {
+      if (c.symbol !== coin.coin.symbol) {
+        const a = coin.coin.symbol;
+        const b = c.symbol;
+        const corr = await correlation(a, b);
+        pq.push({ pair: a + "-" + b, corr });
+      }
+    }
+    pairs = pq.toSorted((a, b) => b.corr - a.corr);
+  }
+
+  $effect(() => {
+    calculatePairs();
+  });
 </script>
 
 {#if coin !== undefined}
@@ -50,11 +77,8 @@
         class="btn info-title"
         onclick={() => {
           const tabname = "info";
-          if (expand && tab === tabname) {
-            expand = false;
-          } else if (!expand) {
-            tab = tabname;
-            expand = true;
+          if (tab === tabname) {
+            tab = "";
           } else {
             tab = tabname;
           }
@@ -66,11 +90,8 @@
         class="btn info-title"
         onclick={() => {
           const tabname = "relational";
-          if (expand && tab === tabname) {
-            expand = false;
-          } else if (!expand) {
-            tab = tabname;
-            expand = true;
+          if (tab === tabname) {
+            tab = "";
           } else {
             tab = tabname;
           }
@@ -83,7 +104,7 @@
       </div>
     </div>
 
-    {#if expand}
+    {#if tab === "info"}
       {@const bullFib = bullRetrace(coin.risk.rally_low, coin.risk.rally_high)}
       {@const bearFib = bearRetrace(coin.risk.dd_high, coin.risk.dd_low)}
       {@const bullRatio =
@@ -403,6 +424,27 @@
           </div>
         </div>
       </div>
+    {:else if tab === "relational"}
+      <table>
+        <thead>
+          <tr>
+            <th>Pair</th>
+            <th>Corelation</th>
+          </tr></thead
+        >
+        <tbody>
+          {#each pairs as p}
+            <tr>
+              <td>
+                {p.pair}
+              </td>
+              <td>
+                {p.corr.toFixed(2)}
+              </td>
+            </tr>
+          {/each}
+        </tbody>
+      </table>
     {/if}
   </div>
 {/if}
