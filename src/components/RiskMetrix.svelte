@@ -64,7 +64,7 @@
 </script>
 
 <div class="panel">
-  <strong>COOL STATISTICS ({tf.activeCrypto.label})</strong>
+  <strong>Asset Ranking ({tf.activeCrypto.label})</strong>
 
   <div class="timeframe-selector">
     <span class="toolbar-label">Sort By:</span>

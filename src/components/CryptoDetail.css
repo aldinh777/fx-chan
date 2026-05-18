@@ -31,8 +31,8 @@
 
 .section-title {
   font-size: 11px;
-  opacity: 0.5;
   margin-bottom: 8px;
+  color: var(--accent);
 }
 
 .grid {
@@ -102,18 +102,168 @@
   height: 4px;
   background-color: #303030;
   border-radius: 4px;
-  overflow: hidden;
+}
+
+.fib-bar {
+  position: relative;
+  overflow: visible;
+}
+
+.fib-marker {
+  position: absolute;
+  top: 50%;
+  transition: left 0.4s ease-out;
+  transform: translate(-50%, -50%);
+}
+
+.fib-marker::before {
+  content: "";
+  display: block;
+  width: 2px;
+  height: 10px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.fib-marker span {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.fib-normal {
+  color: #facc15;
+
+  text-shadow:
+    0 0 6px rgba(250, 204, 21, 0.75),
+    0 0 12px rgba(250, 204, 21, 0.4);
+}
+
+.fib-price {
+  color: #ffffff;
+
+  text-shadow:
+    0 0 6px rgba(255, 255, 255, 0.75),
+    0 0 12px rgba(255, 255, 255, 0.35);
+}
+
+.price-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 0.4s ease-out;
+}
+
+.price-marker::before {
+  content: "";
+  display: block;
+  width: 2px;
+  height: 10px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.price-marker span {
+  position: absolute;
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.price-marker.previous {
+  color: #94a3b8;
+
+  text-shadow:
+    0 0 6px rgba(148, 163, 184, 0.65),
+    0 0 12px rgba(148, 163, 184, 0.28);
+}
+
+.price-marker.average {
+  color: #c084fc;
+
+  text-shadow:
+    0 0 6px rgba(192, 132, 252, 0.7),
+    0 0 12px rgba(192, 132, 252, 0.32);
+}
+
+.price-marker.current {
+  color: var(--green);
+
+  text-shadow:
+    0 0 6px rgba(32, 201, 151, 0.78),
+    0 0 12px rgba(32, 201, 151, 0.38);
+}
+
+.price-marker.current.negative {
+  color: var(--red);
+
+  text-shadow:
+    0 0 6px rgba(239, 68, 68, 0.78),
+    0 0 12px rgba(239, 68, 68, 0.38);
 }
 
 .progress-fill {
   height: 100%;
-  background: var(--accent);
-  opacity: 0.64;
   border-radius: 4px;
   transition: width 0.4s ease-out;
-  box-shadow: 0 0 8px var(--green);
+  background: linear-gradient(
+    90deg,
+    #0f5132 0%,
+    #198754 25%,
+    #20c997 50%,
+    #6ee7b7 75%,
+    #198754 100%
+  );
+  opacity: 0.82;
+  box-shadow:
+    0 0 6px rgba(32, 201, 151, 0.45),
+    0 0 14px rgba(32, 201, 151, 0.22);
 }
 
 .progress-fill.negative {
-  background: var(--red);
+  background: linear-gradient(
+    90deg,
+    #7f1d1d 0%,
+    #b91c1c 25%,
+    #ef4444 50%,
+    #fca5a5 75%,
+    #b91c1c 100%
+  );
+  box-shadow:
+    0 0 6px rgba(239, 68, 68, 0.42),
+    0 0 14px rgba(239, 68, 68, 0.2);
+}
+
+.progress-fill.gold {
+  background: linear-gradient(
+    90deg,
+    #b8860b 0%,
+    #d4af37 35%,
+    #ffd700 50%,
+    #f6e27a 75%,
+    #c99700 100%
+  );
+  box-shadow:
+    0 0 6px rgba(255, 215, 0, 0.45),
+    0 0 14px rgba(255, 215, 0, 0.22);
+}
+
+.progress-fill.drawdown {
+  background: linear-gradient(
+    90deg,
+    #5b2333 0%,
+    #8b2f4a 20%,
+    #c44569 45%,
+    #e0a458 70%,
+    #d4af37 100%
+  );
+
+  box-shadow:
+    0 0 6px rgba(212, 175, 55, 0.32),
+    0 0 14px rgba(196, 69, 105, 0.22);
 }
