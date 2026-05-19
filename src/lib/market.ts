@@ -62,13 +62,21 @@ export interface WeightedCryptoPoint {
     intensity: number;
   };
   risk: {
-    max_dd: number;
-    max_rally: number;
     volatility: number;
-    dd_high: number;
-    dd_low: number;
-    rally_high: number;
-    rally_low: number;
+    drawdown: {
+      max: number;
+      peak: number;
+      trough: number;
+      peak_time: number;
+      trough_time: number;
+    };
+    rally: {
+      max: number;
+      peak: number;
+      trough: number;
+      peak_time: number;
+      trough_time: number;
+    };
   };
 }
 
@@ -106,13 +114,21 @@ const usdc: WeightedCryptoPoint = {
     sharpe: 0,
   },
   risk: {
-    max_dd: 0,
-    max_rally: 0,
     volatility: 0,
-    dd_high: 0,
-    dd_low: 0,
-    rally_high: 0,
-    rally_low: 0,
+    drawdown: {
+      max: 0,
+      peak: 0,
+      trough: 0,
+      peak_time: 0,
+      trough_time: 0,
+    },
+    rally: {
+      max: 0,
+      peak: 0,
+      trough: 0,
+      peak_time: 0,
+      trough_time: 0,
+    },
   },
   volume: { v1: 0, vol: 0, avg: 0, intensity: 0 },
 };

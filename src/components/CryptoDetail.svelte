@@ -10,29 +10,34 @@
     app.cryptoData.find((c) => c.coin.symbol === app.coin),
   );
 
-  let tab = $state("relational");
+  let tab = $state("info");
   let pi = $derived(portfolioIndex(app.cryptoPoints));
 
   const phi = (1 + Math.sqrt(5)) / 2;
   const ret_phi = 1 / phi;
 
-  function bullRetrace(rally_low: number, rally_high: number) {
-    const r = rally_high - rally_low;
+  const fmt = new Intl.DateTimeFormat("id-ID", {
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  function bullRetrace(trough: number, peak: number) {
+    const r = peak - trough;
     return {
       // 0.618 pullback
-      normal: rally_high - r * ret_phi,
+      normal: peak - r * ret_phi,
       // 1.618 bearish extension
-      extended: rally_high - r * phi,
+      extended: peak - r * phi,
     };
   }
 
-  function bearRetrace(dd_high: number, dd_low: number) {
-    const r = dd_high - dd_low;
+  function bearRetrace(peak: number, trough: number) {
+    const r = peak - trough;
     return {
       // 0.618 bounce
-      normal: dd_low + r * ret_phi,
+      normal: trough + r * ret_phi,
       // 1.618 bullish extension
-      extended: dd_low + r * phi,
+      extended: trough + r * phi,
     };
   }
 
@@ -114,19 +119,9 @@
 {#if coin !== undefined}
   <div class="info-panel">
     <div class="row">
-      <button
-        class="btn info-title"
-        onclick={() => {
-          const tabname = "info";
-          if (tab === tabname) {
-            tab = "";
-          } else {
-            tab = tabname;
-          }
-        }}
-      >
-        Info
-      </button>
+      <div class="card" class:text-accent={pi > 0} class:text-red={pi < 0}>
+        <div class="v">Portfolio Index {pi.toFixed(3)}</div>
+      </div>
       <button
         class="btn info-title"
         onclick={() => {
@@ -140,327 +135,350 @@
       >
         Relation
       </button>
-      <div class="card" class:text-accent={pi > 0} class:text-red={pi < 0}>
-        <div class="v r">Portfolio Index {pi.toFixed(3)}</div>
-      </div>
+      <button
+        class="btn info-title"
+        onclick={() => {
+          const tabname = "info";
+          if (tab === tabname) {
+            tab = "";
+          } else {
+            tab = tabname;
+          }
+        }}
+      >
+        Info
+      </button>
     </div>
 
+    <!-- SEPARATOR -->
+    <div style="margin-top: 12px;"></div>
+
     {#if tab === "info"}
-      {@const bullFib = bullRetrace(coin.risk.rally_low, coin.risk.rally_high)}
-      {@const bearFib = bearRetrace(coin.risk.dd_high, coin.risk.dd_low)}
+      {@const bullFib = bullRetrace(
+        coin.risk.rally.trough,
+        coin.risk.rally.peak,
+      )}
+      {@const bearFib = bearRetrace(
+        coin.risk.drawdown.peak,
+        coin.risk.drawdown.trough,
+      )}
       {@const bullRatio =
-        (coin.risk.rally_high - coin.price.t1) /
-        (coin.risk.rally_high - coin.risk.rally_low)}
+        (coin.risk.rally.peak - coin.price.t1) /
+        (coin.risk.rally.peak - coin.risk.rally.trough)}
       {@const bearRatio =
-        (coin.price.t1 - coin.risk.dd_low) /
-        (coin.risk.dd_high - coin.risk.dd_low)}
+        (coin.price.t1 - coin.risk.drawdown.trough) /
+        (coin.risk.drawdown.peak - coin.risk.drawdown.trough)}
 
-      <!-- SEPARATOR -->
-      <div style="margin-top: 12px;">
-        <!-- PRICE ACTION -->
-        <div class="section">
-          <div class="section-title">Price Action</div>
-          <div class="range-container">
-            <div class="range-labels">
-              <span class="text-muted text-small">
-                L: ${formatPrice(coin.price.low)}
-              </span>
+      <!-- PRICE ACTION -->
+      <div class="section">
+        <div class="section-title">Price Action</div>
+        <div class="range-container">
+          <div class="progress-bar fib-bar">
+            <!-- Main Fill -->
+            <div
+              class="progress-fill {coin.performance.growth < 0 && 'negative'}"
+              style="width: {getRangePercentage(
+                coin.price.t1,
+                coin.price.low,
+                coin.price.high,
+              )}%;"
+            ></div>
 
-              <span class="text-muted text-small">
-                ${formatPrice(coin.price.high)} :H
-              </span>
+            <!-- Previous Price -->
+            <div
+              class="price-marker previous"
+              style="left: {getRangePercentage(
+                coin.price.t0,
+                coin.price.low,
+                coin.price.high,
+              )}%"
+            >
+              <span>OLD</span>
             </div>
 
-            <div class="progress-bar fib-bar">
-              <!-- Main Fill -->
-              <div
-                class="progress-fill {coin.performance.growth < 0 &&
-                  'negative'}"
-                style="width: {getRangePercentage(
-                  coin.price.t1,
-                  coin.price.low,
-                  coin.price.high,
-                )}%;"
-              ></div>
-
-              <!-- Previous Price -->
-              <div
-                class="price-marker previous"
-                style="left: {getRangePercentage(
-                  coin.price.t0,
-                  coin.price.low,
-                  coin.price.high,
-                )}%"
-              >
-                <span>OLD</span>
-              </div>
-
-              <!-- Average Price -->
-              <div
-                class="price-marker average"
-                style="left: {getRangePercentage(
-                  coin.price.avg,
-                  coin.price.low,
-                  coin.price.high,
-                )}%"
-              >
-                <span>AVG</span>
-              </div>
-
-              <!-- Current Price -->
-              <div
-                class="price-marker current {coin.performance.growth > 0
-                  ? ''
-                  : 'negative'}"
-                style="left: {getRangePercentage(
-                  coin.price.t1,
-                  coin.price.low,
-                  coin.price.high,
-                )}%"
-              >
-                <span>NOW</span>
-              </div>
+            <!-- Average Price -->
+            <div
+              class="price-marker average"
+              style="left: {getRangePercentage(
+                coin.price.avg,
+                coin.price.low,
+                coin.price.high,
+              )}%"
+            >
+              <span>AVG</span>
             </div>
 
-            <div class="range-labels">
-              <span class="text-muted text-small">
-                OLD: ${formatPrice(coin.price.t0)}
-              </span>
+            <!-- Current Price -->
+            <div
+              class="price-marker current {coin.performance.growth > 0
+                ? ''
+                : 'negative'}"
+              style="left: {getRangePercentage(
+                coin.price.t1,
+                coin.price.low,
+                coin.price.high,
+              )}%"
+            >
+              <span>NOW</span>
+            </div>
+          </div>
 
-              <span class="text-muted text-small">
-                AVG: ${formatPrice(coin.price.avg)}
-              </span>
+          <div class="range-labels">
+            <span class="text-muted text-small">
+              L: ${formatPrice(coin.price.low)}
+            </span>
 
-              <span
-                class=" text-small text-{coin.performance.growth > 0
-                  ? 'green'
-                  : 'red'}"
-              >
-                ${formatPrice(coin.price.t1)} :NOW
-              </span>
+            <span class="text-muted text-small">
+              AVG: ${formatPrice(coin.price.avg)}
+            </span>
+
+            <span class="text-muted text-small">
+              ${formatPrice(coin.price.high)} :H
+            </span>
+          </div>
+
+          <div class="range-labels">
+            <span class="text-muted text-small">
+              OLD: ${formatPrice(coin.price.t0)}
+            </span>
+
+            <span
+              class=" text-small text-{coin.performance.growth > 0
+                ? 'green'
+                : 'red'}"
+            >
+              ${formatPrice(coin.price.t1)} :NOW
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- RALLY RETRACEMENT -->
+      <div class="section">
+        <div class="section-title">Rally Retracement</div>
+
+        <div class="range-container">
+          <div class="progress-bar fib-bar">
+            <!-- Current price fill -->
+            <div
+              class="progress-fill gold"
+              style="width: {getRangePercentage(
+                coin.price.t1,
+                bullFib.extended,
+                coin.risk.rally.peak,
+              )}%;"
+            ></div>
+
+            <!-- φ⁻¹ -->
+            <div
+              class="fib-marker fib-normal"
+              style="left: {getRangePercentage(
+                bullFib.normal,
+                bullFib.extended,
+                coin.risk.rally.peak,
+              )}%"
+            >
+              <span>&phi;⁻¹</span>
+            </div>
+
+            <!-- Current Price Ratio -->
+            <div
+              class="fib-marker fib-price"
+              style="left: {getRangePercentage(
+                coin.price.t1,
+                bullFib.extended,
+                coin.risk.rally.peak,
+              )}%"
+            >
+              <span>{bullRatio.toFixed(3)}</span>
+            </div>
+          </div>
+
+          <div class="range-labels">
+            <span class="text-muted text-small">
+              Φ: ${formatPrice(bullFib.extended)}
+            </span>
+
+            <span class="text-muted text-small">
+              Ratio: {bullRatio.toFixed(3)}
+            </span>
+
+            <span class="text-muted text-small">
+              {fmt.format(new Date(coin.risk.rally.peak_time))} ${formatPrice(
+                coin.risk.rally.peak,
+              )} :P
+            </span>
+          </div>
+
+          <div class="range-labels">
+            <span class="text-muted text-small">
+              &phi;⁻¹: ${formatPrice(bullFib.normal)}
+            </span>
+
+            <span class="text-muted text-small">
+              {fmt.format(new Date(coin.risk.rally.trough_time))} ${formatPrice(
+                coin.risk.rally.trough,
+              )} :T
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DRAWDOWN RETRACEMENT -->
+      <div class="section">
+        <div class="section-title">Drawdown Retracement</div>
+
+        <div class="range-container">
+          <div class="progress-bar fib-bar">
+            <!-- Current price fill -->
+            <div
+              class="progress-fill drawdown"
+              style="width: {getRangePercentage(
+                bearFib.extended - coin.price.t1,
+                0,
+                bearFib.extended - coin.risk.drawdown.trough,
+              )}%;"
+            ></div>
+
+            <!-- φ⁻¹ -->
+            <div
+              class="fib-marker fib-normal"
+              style="left: {getRangePercentage(
+                bearFib.extended - bearFib.normal,
+                0,
+                bearFib.extended - coin.risk.drawdown.trough,
+              )}%"
+            >
+              <span>&phi;⁻¹</span>
+            </div>
+
+            <!-- Current Drawdown Ratio -->
+            <div
+              class="fib-marker fib-price negative"
+              style="left: {getRangePercentage(
+                bearFib.extended - coin.price.t1,
+                0,
+                bearFib.extended - coin.risk.drawdown.trough,
+              )}%"
+            >
+              <span>{bearRatio.toFixed(3)}</span>
+            </div>
+          </div>
+
+          <div class="range-labels">
+            <span class="text-muted text-small">
+              Φ: ${formatPrice(bearFib.extended)}
+            </span>
+
+            <span class="text-muted text-small">
+              Ratio: {bearRatio.toFixed(3)}
+            </span>
+
+            <span class="text-muted text-small">
+              {fmt.format(new Date(coin.risk.drawdown.trough_time))} ${formatPrice(
+                coin.risk.drawdown.trough,
+              )} :T
+            </span>
+          </div>
+
+          <div class="range-labels">
+            <span class="text-muted text-small">
+              &phi;⁻¹: ${formatPrice(bearFib.normal)}
+            </span>
+
+            <span class="text-muted text-small">
+              {fmt.format(new Date(coin.risk.drawdown.peak_time))} ${formatPrice(
+                coin.risk.drawdown.peak,
+              )} :P
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PERFORMANCE -->
+      <div class="section">
+        <div class="section-title">Performance</div>
+        <div class="grid">
+          <div class="card">
+            <div class="k">Momentum</div>
+            <div class="v">{coin.performance.momentum.toFixed(3)}</div>
+          </div>
+
+          <div class="card">
+            <div class="k">Sharpe</div>
+            <div class="v">{coin.performance.sharpe.toFixed(3)}</div>
+          </div>
+
+          <div class="card">
+            <div class="k">Growth Rate</div>
+            <div class="v">
+              {(coin.performance.log_return - pi).toFixed(3)}
+            </div>
+          </div>
+
+          <div class="card highlight">
+            <div class="k">Growth</div>
+            <div
+              class="v"
+              class:positive={coin.performance.growth >= 0}
+              class:negative={coin.performance.growth < 0}
+            >
+              {(coin.performance.growth * 100).toFixed(2)}%
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- RALLY RETRACEMENT -->
-        <div class="section">
-          <div class="section-title">Rally Retracement</div>
+      <!-- VOLUME -->
+      <div class="section">
+        <div class="section-title">Volume</div>
+        <div class="grid">
+          <div class="card">
+            <div class="k">Total</div>
+            <div class="v">{formatVolume(coin.volume.vol)}</div>
+          </div>
 
-          <div class="range-container">
-            <div class="range-labels">
-              <span class="text-muted text-small">
-                Φ: ${formatPrice(bullFib.extended)}
-              </span>
+          <div class="card">
+            <div class="k">Average</div>
+            <div class="v">{formatVolume(coin.volume.avg)}</div>
+          </div>
 
-              <span class="text-muted text-small">
-                ${formatPrice(coin.risk.rally_high)} :H
-              </span>
-            </div>
+          <div class="card">
+            <div class="k">Last</div>
+            <div class="v">{formatVolume(coin.volume.v1)}</div>
+          </div>
 
-            <div class="progress-bar fib-bar">
-              <!-- Current price fill -->
-              <div
-                class="progress-fill gold"
-                style="width: {getRangePercentage(
-                  coin.price.t1,
-                  bullFib.extended,
-                  coin.risk.rally_high,
-                )}%;"
-              ></div>
+          <div class="card highlight">
+            <div class="k">Intensity</div>
+            <div class="v">{coin.volume.intensity.toFixed(3)}</div>
+          </div>
+        </div>
+      </div>
 
-              <!-- φ⁻¹ -->
-              <div
-                class="fib-marker fib-normal"
-                style="left: {getRangePercentage(
-                  bullFib.normal,
-                  bullFib.extended,
-                  coin.risk.rally_high,
-                )}%"
-              >
-                <span>&phi;⁻¹</span>
-              </div>
+      <!-- RISK -->
+      <div class="section">
+        <div class="section-title">Risk Profile</div>
+        <div class="grid">
+          <div class="card">
+            <div class="k">Volatility</div>
+            <div class="v">{(coin.risk.volatility * 100).toFixed(2)}%</div>
+          </div>
 
-              <!-- Current Price Ratio -->
-              <div
-                class="fib-marker fib-price"
-                style="left: {getRangePercentage(
-                  coin.price.t1,
-                  bullFib.extended,
-                  coin.risk.rally_high,
-                )}%"
-              >
-                <span>{bullRatio.toFixed(3)}</span>
-              </div>
-            </div>
-
-            <div class="range-labels">
-              <span class="text-muted text-small">
-                &phi;⁻¹: ${formatPrice(bullFib.normal)}
-              </span>
-
-              <span class="text-muted text-small">
-                Ratio: {bullRatio.toFixed(3)}
-              </span>
-
-              <span class="text-muted text-small">
-                ${formatPrice(coin.risk.rally_low)} :L
+          <div class="card">
+            <div class="k">Max Rally</div>
+            <div class="v">
+              <span class="text-green">
+                {(coin.risk.rally.max * 100).toFixed(2)}%
               </span>
             </div>
           </div>
-        </div>
 
-        <!-- DRAWDOWN RETRACEMENT -->
-        <div class="section">
-          <div class="section-title">Drawdown Retracement</div>
-
-          <div class="range-container">
-            <div class="range-labels">
-              <span class="text-muted text-small">
-                Φ: ${formatPrice(bearFib.extended)}
+          <div class="card danger">
+            <div class="k">Max Drawdown</div>
+            <div class="v">
+              <span class="text-red">
+                {(coin.risk.drawdown.max * 100).toFixed(2)}%
               </span>
-
-              <span class="text-muted text-small">
-                ${formatPrice(coin.risk.dd_low)} :L
-              </span>
-            </div>
-
-            <div class="progress-bar fib-bar">
-              <!-- Current price fill -->
-              <div
-                class="progress-fill drawdown"
-                style="width: {getRangePercentage(
-                  bearFib.extended - coin.price.t1,
-                  0,
-                  bearFib.extended - coin.risk.dd_low,
-                )}%;"
-              ></div>
-
-              <!-- φ⁻¹ -->
-              <div
-                class="fib-marker fib-normal"
-                style="left: {getRangePercentage(
-                  bearFib.extended - bearFib.normal,
-                  0,
-                  bearFib.extended - coin.risk.dd_low,
-                )}%"
-              >
-                <span>&phi;⁻¹</span>
-              </div>
-
-              <!-- Current Drawdown Ratio -->
-              <div
-                class="fib-marker fib-price negative"
-                style="left: {getRangePercentage(
-                  bearFib.extended - coin.price.t1,
-                  0,
-                  bearFib.extended - coin.risk.dd_low,
-                )}%"
-              >
-                <span>{bearRatio.toFixed(3)}</span>
-              </div>
-            </div>
-
-            <div class="range-labels">
-              <span class="text-muted text-small">
-                &phi;⁻¹: ${formatPrice(bearFib.normal)}
-              </span>
-
-              <span class="text-muted text-small">
-                Ratio: {bearRatio.toFixed(3)}
-              </span>
-
-              <span class="text-muted text-small">
-                ${formatPrice(coin.risk.dd_high)} :H
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- PERFORMANCE -->
-        <div class="section">
-          <div class="section-title">Performance</div>
-          <div class="grid">
-            <div class="card">
-              <div class="k">Momentum</div>
-              <div class="v">{coin.performance.momentum.toFixed(3)}</div>
-            </div>
-
-            <div class="card">
-              <div class="k">Sharpe</div>
-              <div class="v">{coin.performance.sharpe.toFixed(3)}</div>
-            </div>
-
-            <div class="card">
-              <div class="k">Growth Rate</div>
-              <div class="v">
-                {(coin.performance.log_return - pi).toFixed(3)}
-              </div>
-            </div>
-
-            <div class="card highlight">
-              <div class="k">Growth</div>
-              <div
-                class="v"
-                class:positive={coin.performance.growth >= 0}
-                class:negative={coin.performance.growth < 0}
-              >
-                {(coin.performance.growth * 100).toFixed(2)}%
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- VOLUME -->
-        <div class="section">
-          <div class="section-title">Volume</div>
-          <div class="grid">
-            <div class="card">
-              <div class="k">Total</div>
-              <div class="v">{formatVolume(coin.volume.vol)}</div>
-            </div>
-
-            <div class="card">
-              <div class="k">Average</div>
-              <div class="v">{formatVolume(coin.volume.avg)}</div>
-            </div>
-
-            <div class="card">
-              <div class="k">Last</div>
-              <div class="v">{formatVolume(coin.volume.v1)}</div>
-            </div>
-
-            <div class="card highlight">
-              <div class="k">Intensity</div>
-              <div class="v">{coin.volume.intensity.toFixed(3)}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- RISK -->
-        <div class="section">
-          <div class="section-title">Risk Profile</div>
-          <div class="grid">
-            <div class="card">
-              <div class="k">Volatility</div>
-              <div class="v">{(coin.risk.volatility * 100).toFixed(2)}%</div>
-            </div>
-
-            <div class="card">
-              <div class="k">Max Rally</div>
-              <div class="v">
-                <span class="text-green">
-                  {(coin.risk.max_rally * 100).toFixed(2)}%
-                </span>
-              </div>
-            </div>
-
-            <div class="card danger">
-              <div class="k">Max Drawdown</div>
-              <div class="v">
-                <span class="text-red">
-                  {(coin.risk.max_dd * 100).toFixed(2)}%
-                </span>
-              </div>
             </div>
           </div>
         </div>

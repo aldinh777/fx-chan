@@ -45,7 +45,7 @@
       case "volatility":
         return p.risk.volatility;
       case "drawdown":
-        return p.risk.max_dd;
+        return p.risk.drawdown.max;
       case "holding":
         return p.coin.position * p.price.t1;
       default:
@@ -147,11 +147,11 @@
             </div>
           {:else if sortBy === "drawdown"}
             <div
-              class="metric-value {p.risk.max_dd > 0.1
+              class="metric-value {p.risk.drawdown.max > 0.1
                 ? 'text-red'
                 : 'text-muted'}"
             >
-              -{(p.risk.max_dd * 100).toFixed(2)}%
+              -{(p.risk.drawdown.max * 100).toFixed(2)}%
             </div>
           {:else if sortBy === "holding"}
             <div class="metric-value text-muted">

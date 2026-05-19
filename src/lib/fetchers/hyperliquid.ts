@@ -198,11 +198,17 @@ export async function calculateCoin(
     let max_dd = 0;
     let dd_high = 0;
     let dd_low = 0;
+    let peak_time = 0;
+    let dd_thigh = 0;
+    let dd_tlow = 0;
 
     let trough = Infinity;
     let max_rally = 0;
     let rally_low = 0;
     let rally_high = 0;
+    let through_time = 0;
+    let rally_thigh = 0;
+    let rally_tlow = 0;
 
     let high = -Infinity;
     let low = Infinity;
@@ -214,6 +220,7 @@ export async function calculateCoin(
       const l = Number(candle.l || candle.c);
       const c = Number(candle.c);
       const v = Number(candle.v);
+      const t = candle.t;
 
       // Volume Calculation
       volume += v * c;
@@ -221,18 +228,23 @@ export async function calculateCoin(
       // Max Drawdown Logic
       if (h > peak) {
         peak = h;
+        peak_time = t;
       }
-      const drawdown = peak > 0 ? (peak - l) / peak : 0;
+      const drawdown = (peak - l) / peak;
       if (drawdown > max_dd) {
         max_dd = drawdown;
 
         dd_high = peak;
         dd_low = l;
+
+        dd_thigh = peak_time;
+        dd_tlow = t;
       }
 
       // Max Rally Logic
       if (l < trough) {
         trough = l;
+        through_time = t;
       }
       const rally = (h - trough) / trough;
       if (rally > max_rally) {
@@ -240,6 +252,9 @@ export async function calculateCoin(
 
         rally_low = trough;
         rally_high = h;
+
+        rally_tlow = through_time;
+        rally_thigh = t;
       }
 
       // High, Low, Avg Logic
@@ -277,13 +292,21 @@ export async function calculateCoin(
         sharpe,
       },
       risk: {
-        max_dd,
-        max_rally,
         volatility,
-        dd_high,
-        dd_low,
-        rally_high,
-        rally_low,
+        drawdown: {
+          max: max_dd,
+          peak: dd_high,
+          trough: dd_low,
+          peak_time: dd_thigh,
+          trough_time: dd_tlow,
+        },
+        rally: {
+          max: max_rally,
+          peak: rally_high,
+          trough: rally_low,
+          peak_time: rally_thigh,
+          trough_time: rally_tlow,
+        },
       },
       volume: { v1, vol: volume, avg: avg_volume, intensity },
     };
