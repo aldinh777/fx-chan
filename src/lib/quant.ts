@@ -1,6 +1,19 @@
+import { wl } from "../stores/watchlist.svelte";
 import { fetchCoin } from "./fetchers/hyperliquid";
 
-function returns(prices: number[]) {
+export function calcSum(items: number[]) {
+  let sum = 0;
+  for (const p of items) {
+    sum += p;
+  }
+  return sum;
+}
+
+export function calcMean(items: number[]) {
+  return calcSum(items) / items.length;
+}
+
+export function calcReturns(prices: number[]) {
   const rets: number[] = [];
   for (let i = 0; i < prices.length - 1; i++) {
     const t0 = prices[i];
@@ -10,47 +23,47 @@ function returns(prices: number[]) {
   return rets;
 }
 
-function deviations(returns: number[]) {
-  let sum = 0;
-  for (const r of returns) {
-    sum += r;
-  }
-  const mean = sum / returns.length;
+export function calcDeviations(returns: number[]) {
+  const mean = calcMean(returns);
   return returns.map((r) => r - mean);
 }
 
-function covariance(d0: number[], d1: number[]) {
-  let sum = 0;
-  for (let i = 0; i < d0.length; i++) {
-    sum += d0[i] * d1[i];
-  }
-  return sum / d0.length;
+export function calcCovariance(d0: number[], d1: number[]) {
+  return calcSum(d0.map((d, i) => d * d1[i])) / (d0.length - 1);
 }
 
-function volatility(d0: number[]) {
-  let sum = 0;
-  for (const d of d0) {
-    sum += d ** 2;
-  }
-  const variance = sum / d0.length;
-  return Math.sqrt(variance);
+export function calcVolatility(d0: number[]) {
+  return Math.sqrt(calcSum(d0.map((d) => d ** 2)) / (d0.length - 1));
 }
 
-export async function correlation(a: string, b: string) {
-  const c0 = await fetchCoin(a);
-  const c1 = await fetchCoin(b);
+export type CorelationMatrix = Record<string, Record<string, number>>;
 
-  const r0 = returns(c0.map((c) => c.c));
-  const r1 = returns(c1.map((c) => c.c));
+export async function correlation(): Promise<CorelationMatrix> {
+  const matrix: CorelationMatrix = {};
+  const setMatrix = (c0: string, c1: string, v: number) => {
+    if (!matrix[c0]) {
+      matrix[c0] = {};
+    }
+    matrix[c0][c1] = v;
+  };
 
-  const d0 = deviations(r0);
-  const d1 = deviations(r1);
+  const coins = wl.cryptos.map((p) => p.symbol);
 
-  const cov = covariance(d0, d1);
+  for (const c0 of coins) {
+    for (const c1 of coins) {
+      if (c0 === c1) {
+        setMatrix(c0, c1, 1);
+        continue;
+      }
+      if (matrix[c0]?.[c1]) {
+        continue;
+      }
+      const cc0 = await fetchCoin(c0);
+      const cc1 = await fetchCoin(c1);
+      const covariance = calcCovariance(cc0.deviations, cc1.deviations);
+      setMatrix(c0, c1, covariance / (cc0.volatility * cc1.volatility));
+    }
+  }
 
-  const v0 = volatility(d0);
-  const v1 = volatility(d1);
-
-  const cor = cov / (v0 * v1);
-  return cor;
+  return matrix;
 }

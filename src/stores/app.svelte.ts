@@ -1,7 +1,10 @@
-import type { WeightedCryptoPoint, WeightedFxPoint } from "../lib/market";
+import {
+  weightCryptoPoints,
+  type WeightedCryptoPoint,
+  type WeightedFxPoint,
+} from "../lib/market";
 
 import { fetchAllCrypto } from "../lib/fetchers/hyperliquid";
-import { weightCryptoPoints } from "../lib/market-utils";
 import { load } from "../lib/storage";
 import { fetchAllForex } from "../lib/fetchers/frankfurter";
 

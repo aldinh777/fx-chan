@@ -262,3 +262,70 @@
     0 0 6px rgba(212, 175, 55, 0.32),
     0 0 14px rgba(196, 69, 105, 0.22);
 }
+
+.heatmap-wrap {
+  width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 10px;
+}
+
+/* keep table large enough to force horizontal scroll */
+.heatmap {
+  border-collapse: collapse;
+  min-width: max-content;
+  font-family: ui-sans-serif, system-ui;
+  font-size: 13px;
+  table-layout: fixed;
+}
+
+.heatmap th,
+.heatmap td {
+  padding: 10px 8px;
+  text-align: center;
+  border: 1px solid #0f172a;
+  white-space: nowrap;
+}
+
+/* sticky top header */
+.heatmap th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #0b1220;
+  color: #cbd5e1;
+}
+
+/* sticky first column */
+.heatmap .row {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: #0b1220;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+/* top-left corner fix */
+.heatmap th:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 4;
+}
+.cell {
+  font-variant-numeric: tabular-nums;
+  transition:
+    transform 0.1s ease,
+    filter 0.1s ease;
+}
+
+.cell:hover {
+  transform: scale(1.05);
+  filter: brightness(1.15);
+}
+
+.loading {
+  padding: 16px;
+  font-family: ui-sans-serif, system-ui;
+  color: #9ca3af;
+}

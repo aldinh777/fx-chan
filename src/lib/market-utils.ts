@@ -1,10 +1,4 @@
-import type {
-  CryptoItem,
-  WeightedCryptoPoint,
-  WeightedFxPoint,
-} from "./market";
-
-import { wl } from "../stores/watchlist.svelte";
+import type { WeightedCryptoPoint, WeightedFxPoint } from "./market";
 
 export interface ComputedCryptoPoint {
   p: WeightedCryptoPoint;
@@ -30,60 +24,6 @@ export interface ComputedFxPoint {
     pair: string;
     growth: number;
   };
-}
-
-const usdCoin: CryptoItem = {
-  id: "usdc",
-  symbol: "usdc",
-  weight: 1,
-  position: 0,
-  visible: true,
-};
-
-const usdc: WeightedCryptoPoint = {
-  coin: usdCoin,
-  price: { t1: 1, t0: 1, avg: 1, high: 1, low: 1 },
-  performance: {
-    growth: 0,
-    avg_growth: 0,
-    avg_returns: 0,
-    growth_rate: 0,
-    momentum: 0,
-    sharpe: 0,
-  },
-  risk: {
-    max_dd: 0,
-    max_rally: 0,
-    volatility: 0,
-    dd_high: 0,
-    dd_low: 0,
-    rally_high: 0,
-    rally_low: 0,
-  },
-  volume: { v1: 0, vol: 0, avg: 0, intensity: 0 },
-};
-
-export function weightCryptoPoints(data: WeightedCryptoPoint[]) {
-  return [usdc, ...data].flatMap((p): WeightedCryptoPoint[] => {
-    const c = wl.cryptos.find((i) => i.symbol === p.coin.symbol);
-
-    if (c && !c.visible) {
-      return [];
-    }
-
-    return [
-      {
-        ...p,
-        coin: {
-          ...p.coin,
-          weight:
-            wl.mode === "position_size"
-              ? p.coin.position * p.price.t1
-              : p.coin.weight,
-        },
-      },
-    ];
-  });
 }
 
 type FormattedCore = {

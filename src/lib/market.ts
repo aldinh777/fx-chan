@@ -1,3 +1,5 @@
+import { wl } from "../stores/watchlist.svelte";
+
 export interface ForexItem {
   id: string;
   symbol: string;
@@ -17,7 +19,7 @@ export interface WeightedFxPoint {
     growth: number;
     avg_growth: number;
     avg_returns: number;
-    log_ratio: number;
+    log_return: number;
     momentum: number;
     sharpe: number;
     trend_quality: number;
@@ -49,7 +51,7 @@ export interface WeightedCryptoPoint {
     growth: number;
     avg_growth: number;
     avg_returns: number;
-    growth_rate: number;
+    log_return: number;
     momentum: number;
     sharpe: number;
   };
@@ -78,8 +80,62 @@ export function portfolioIndex(points: WeightedCryptoPoint[]): number {
 
   for (const p of points) {
     marketWeight += p.coin.weight;
-    marketSum += p.performance.growth_rate * p.coin.weight;
+    marketSum += p.performance.log_return * p.coin.weight;
   }
 
   return safeDiv(marketSum, marketWeight);
+}
+
+const usdCoin: CryptoItem = {
+  id: "usdc",
+  symbol: "usdc",
+  weight: 1,
+  position: 0,
+  visible: true,
+};
+
+const usdc: WeightedCryptoPoint = {
+  coin: usdCoin,
+  price: { t1: 1, t0: 1, avg: 1, high: 1, low: 1 },
+  performance: {
+    growth: 0,
+    avg_growth: 0,
+    avg_returns: 0,
+    log_return: 0,
+    momentum: 0,
+    sharpe: 0,
+  },
+  risk: {
+    max_dd: 0,
+    max_rally: 0,
+    volatility: 0,
+    dd_high: 0,
+    dd_low: 0,
+    rally_high: 0,
+    rally_low: 0,
+  },
+  volume: { v1: 0, vol: 0, avg: 0, intensity: 0 },
+};
+
+export function weightCryptoPoints(data: WeightedCryptoPoint[]) {
+  return [usdc, ...data].flatMap((p): WeightedCryptoPoint[] => {
+    const c = wl.cryptos.find((i) => i.symbol === p.coin.symbol);
+
+    if (c && !c.visible) {
+      return [];
+    }
+
+    return [
+      {
+        ...p,
+        coin: {
+          ...p.coin,
+          weight:
+            wl.mode === "position_size"
+              ? p.coin.position * p.price.t1
+              : p.coin.weight,
+        },
+      },
+    ];
+  });
 }

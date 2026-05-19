@@ -151,7 +151,7 @@ export async function calculateForex(
 
     const growth = safeDiv(t1 - t0, t0);
     const avg_growth = safeDiv(avg - t0, t0);
-    const log_ratio = Math.log(t1 / t0);
+    const log_return = Math.log(t1 / t0);
 
     const momentum = safeDiv(growth - avg_growth, volatility);
 
@@ -178,7 +178,7 @@ export async function calculateForex(
         growth,
         avg_growth,
         avg_returns,
-        log_ratio,
+        log_return,
         momentum,
         sharpe,
         trend_quality,

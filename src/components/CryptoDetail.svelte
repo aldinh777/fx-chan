@@ -4,8 +4,7 @@
   import { formatPrice, formatVolume } from "../lib/formatter";
   import { portfolioIndex, type WeightedCryptoPoint } from "../lib/market";
   import { app } from "../stores/app.svelte";
-  import { wl } from "../stores/watchlist.svelte";
-  import { correlation } from "../lib/quant";
+  import { correlation, type CorelationMatrix } from "../lib/quant";
 
   const coin: WeightedCryptoPoint | undefined = $derived(
     app.cryptoData.find((c) => c.coin.symbol === app.coin),
@@ -43,31 +42,73 @@
     return Math.max(0, Math.min(100, percentage));
   }
 
-  interface Pair {
-    pair: string;
-    corr: number;
-  }
-  let pairs: Pair[] = $state([]);
-
-  async function calculatePairs() {
-    if (!coin) {
-      return;
+  let matrix: CorelationMatrix = $state({});
+  let coins = $derived.by(() => {
+    const keys = Object.keys(matrix);
+    if (keys.length === 0) {
+      return [];
     }
-    const pq = [];
-    for (const c of wl.cryptos) {
-      if (c.symbol !== coin.coin.symbol) {
-        const a = coin.coin.symbol;
-        const b = c.symbol;
-        const corr = await correlation(a, b);
-        pq.push({ pair: a + "-" + b, corr });
+    function sumCorr(coin: string) {
+      let sum = 0;
+      let n = 0;
+      for (const other of keys) {
+        if (other === coin) {
+          continue;
+        }
+        const v = matrix[coin]?.[other];
+        if (v == null) {
+          continue;
+        }
+        sum += Math.abs(v);
+        n++;
       }
+      return sum;
     }
-    pairs = pq.toSorted((a, b) => b.corr - a.corr);
+    return keys.sort((a, b) => sumCorr(b) - sumCorr(a));
+  });
+  let loading = $derived(coins.length === 0);
+
+  async function calculateCorelations() {
+    matrix = await correlation();
   }
 
   $effect(() => {
-    calculatePairs();
+    calculateCorelations();
   });
+
+  function color(v: number) {
+    if (v === undefined || v === null) return "#f3f4f6";
+
+    const x = Math.max(-1, Math.min(1, v));
+
+    const neutral = [243, 244, 246];
+    const red = [127, 29, 29];
+    const green = [21, 128, 61];
+
+    let target;
+
+    if (x > 0) target = red;
+    else target = green;
+
+    const t = Math.abs(x);
+
+    const r = Math.round(neutral[0] + (target[0] - neutral[0]) * t);
+    const g = Math.round(neutral[1] + (target[1] - neutral[1]) * t);
+    const b = Math.round(neutral[2] + (target[2] - neutral[2]) * t);
+
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+  function textColor(v: number) {
+    const rgb = color(v);
+    const m = rgb.match(/\d+/g);
+    if (!m) return "#111827";
+
+    const [r, g, b] = m.map(Number);
+
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+    return luminance > 140 ? "#111827" : "#ffffff";
+  }
 </script>
 
 {#if coin !== undefined}
@@ -352,7 +393,7 @@
             <div class="card">
               <div class="k">Growth Rate</div>
               <div class="v">
-                {(coin.performance.growth_rate - pi).toFixed(3)}
+                {(coin.performance.log_return - pi).toFixed(3)}
               </div>
             </div>
 
@@ -425,26 +466,40 @@
         </div>
       </div>
     {:else if tab === "relational"}
-      <table>
-        <thead>
-          <tr>
-            <th>Pair</th>
-            <th>Corelation</th>
-          </tr></thead
-        >
-        <tbody>
-          {#each pairs as p}
-            <tr>
-              <td>
-                {p.pair}
-              </td>
-              <td>
-                {p.corr.toFixed(2)}
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
+      {#if loading || coins.length === 0}
+        <div class="loading">Computing correlation matrix...</div>
+      {:else}
+        <div class="heatmap-wrap">
+          <table class="heatmap">
+            <thead>
+              <tr>
+                <th></th>
+                {#each coins as c}
+                  <th>{c.toUpperCase()}</th>
+                {/each}
+              </tr>
+            </thead>
+
+            <tbody>
+              {#each coins as row}
+                <tr>
+                  <td class="row">{row.toUpperCase()}</td>
+
+                  {#each coins as col}
+                    {@const v = matrix[row]?.[col]}
+                    <td
+                      class="cell"
+                      style="background: {color(v)}; color: {textColor(v)}"
+                    >
+                      {v?.toFixed(2) ?? "—"}
+                    </td>
+                  {/each}
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      {/if}
     {/if}
   </div>
 {/if}

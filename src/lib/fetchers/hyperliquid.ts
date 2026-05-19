@@ -1,4 +1,10 @@
 import { safeDiv, type WeightedCryptoPoint, type CryptoItem } from "../market";
+import {
+  calcDeviations,
+  calcMean,
+  calcReturns,
+  calcVolatility,
+} from "../quant";
 
 import { tf } from "./../../stores/timeframe.svelte";
 import { wl } from "./../../stores/watchlist.svelte";
@@ -26,10 +32,17 @@ export interface CandleData<T = number> {
   n: number;
 }
 
-const candleCache: Record<string, CandleData[]> = {};
+export interface CoinData {
+  candles: CandleData[];
+  returns: number[];
+  deviations: number[];
+  volatility: number;
+}
+
+const candleCache: Record<string, CoinData> = {};
 const awaitFetching: Set<string> = new Set();
 
-export async function fetchCoin(symbol: string): Promise<CandleData[]> {
+export async function fetchCoin(symbol: string): Promise<CoinData> {
   const tfsymbol = `${symbol}:${tf.activeCrypto.label}:${tf.activeCrypto.interval}`;
 
   if (awaitFetching.has(tfsymbol)) {
@@ -81,9 +94,14 @@ export async function fetchCoin(symbol: string): Promise<CandleData[]> {
         v: parseFloat(c.v),
       }),
     );
-    candleCache[tfsymbol] = candles;
+    const prices = candles.map((c) => c.c);
+    const returns = calcReturns(prices);
+    const deviations = calcDeviations(returns);
+    const volatility = calcVolatility(deviations);
 
-    return candles;
+    const coin: CoinData = { candles, returns, deviations, volatility };
+    candleCache[tfsymbol] = coin;
+    return coin;
   } finally {
     awaitFetching.delete(tfsymbol);
   }
@@ -108,7 +126,7 @@ export async function calculatePriceAction(
       return w
         ? ({
             symbol: w.symbol,
-            candles: await fetchCoin(w.symbol),
+            candles: (await fetchCoin(w.symbol)).candles,
           } satisfies Candleman)
         : null;
     }),
@@ -136,8 +154,6 @@ export async function calculatePriceAction(
   const priceCandles: CandleData[] = [];
 
   for (let i = 0; i < baseCandles.length; i++) {
-    const { i: n, t, T } = baseCandles[i];
-
     // price calculation logic
     const o = compare(i, "o");
     const h = compare(i, "h");
@@ -146,12 +162,10 @@ export async function calculatePriceAction(
     const tp = (o + h + l + c) / 4;
 
     priceCandles.push({
+      ...baseCandles[i],
       s: coinMan?.symbol ?? "usdc",
       n: coinMan ? coinMan.candles[i].n : 0,
       v: coinMan ? coinMan.candles[i].v * tp : 0,
-      i: n,
-      t,
-      T,
       o,
       h,
       l,
@@ -166,7 +180,8 @@ export async function calculateCoin(
   coin: CryptoItem,
 ): Promise<WeightedCryptoPoint | null> {
   try {
-    const candles = await fetchCoin(coin.symbol);
+    const coinData = await fetchCoin(coin.symbol);
+    const candles = coinData.candles;
 
     if (!Array.isArray(candles) || candles.length === 0) return null;
 
@@ -193,10 +208,6 @@ export async function calculateCoin(
     let low = Infinity;
     let sum = 0;
     let volume = 0;
-
-    const returns = [];
-    let returns_sum = 0;
-    let c0: number | null = null;
 
     for (const candle of candles) {
       const h = Number(candle.h || candle.c);
@@ -239,31 +250,17 @@ export async function calculateCoin(
         low = l;
       }
       sum += c;
-
-      // Returns Logic
-      if (c0 !== null) {
-        returns.push((returns_sum += (c - c0) / c0));
-      }
-      c0 = c;
     }
 
-    const avg_returns = safeDiv(returns_sum, returns.length);
-    const volatility = Math.sqrt(
-      safeDiv(
-        returns.reduce((sum, r) => {
-          const d = r - avg_returns;
-          return sum + d * d;
-        }, 0),
-        returns.length,
-      ),
-    );
+    const avg_returns = calcMean(coinData.returns);
+    const volatility = coinData.volatility;
 
     const avg_volume = safeDiv(volume, count);
     const intensity = safeDiv(v1 * t1, avg_volume);
 
     const avg = safeDiv(sum, count);
     const avg_growth = safeDiv(avg - t0, t0);
-    const growth_rate = Math.log(t1 / t0);
+    const log_return = Math.log(t1 / t0);
 
     const growth = safeDiv(t1 - t0, t0);
     const momentum = safeDiv(growth - avg_growth, volatility);
@@ -275,7 +272,7 @@ export async function calculateCoin(
         growth,
         avg_growth,
         avg_returns,
-        growth_rate,
+        log_return,
         momentum,
         sharpe,
       },
