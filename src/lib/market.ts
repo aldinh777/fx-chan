@@ -38,6 +38,20 @@ export interface CryptoItem {
   position: number;
 }
 
+type TimeRanged = {
+  candle: number;
+  timeframe: number;
+  annual: number;
+};
+
+type PeakTroughRanged = {
+  max: number;
+  peak: number;
+  trough: number;
+  peak_time: number;
+  trough_time: number;
+};
+
 export interface WeightedCryptoPoint {
   coin: CryptoItem;
   price: {
@@ -48,12 +62,18 @@ export interface WeightedCryptoPoint {
     low: number;
   };
   performance: {
-    growth: number;
-    avg_growth: number;
-    avg_returns: number;
     log_return: number;
-    momentum: number;
-    sharpe: number;
+    avg_log_return: number;
+    simple_return: number;
+    avg_return: TimeRanged;
+    sharpe: TimeRanged;
+    sortino: TimeRanged;
+  };
+  risk: {
+    volatility: TimeRanged;
+    down_volatility: TimeRanged;
+    drawdown: PeakTroughRanged;
+    runup: PeakTroughRanged;
   };
   volume: {
     v1: number;
@@ -61,26 +81,7 @@ export interface WeightedCryptoPoint {
     avg: number;
     intensity: number;
   };
-  risk: {
-    volatility: number;
-    drawdown: {
-      max: number;
-      peak: number;
-      trough: number;
-      peak_time: number;
-      trough_time: number;
-    };
-    rally: {
-      max: number;
-      peak: number;
-      trough: number;
-      peak_time: number;
-      trough_time: number;
-    };
-  };
 }
-
-export const safeDiv = (a: number, b: number) => (b > 0 ? a / b : 0);
 
 export function portfolioIndex(points: WeightedCryptoPoint[]): number {
   let marketWeight = 0;
@@ -91,7 +92,7 @@ export function portfolioIndex(points: WeightedCryptoPoint[]): number {
     marketSum += p.performance.log_return * p.coin.weight;
   }
 
-  return safeDiv(marketSum, marketWeight);
+  return marketSum / marketWeight;
 }
 
 const usdCoin: CryptoItem = {
@@ -106,15 +107,36 @@ const usdc: WeightedCryptoPoint = {
   coin: usdCoin,
   price: { t1: 1, t0: 1, avg: 1, high: 1, low: 1 },
   performance: {
-    growth: 0,
-    avg_growth: 0,
-    avg_returns: 0,
     log_return: 0,
-    momentum: 0,
-    sharpe: 0,
+    avg_log_return: 0,
+    simple_return: 0,
+    avg_return: {
+      candle: 0,
+      timeframe: 0,
+      annual: 0,
+    },
+    sharpe: {
+      candle: 0,
+      timeframe: 0,
+      annual: 0,
+    },
+    sortino: {
+      candle: 0,
+      timeframe: 0,
+      annual: 0,
+    },
   },
   risk: {
-    volatility: 0,
+    volatility: {
+      candle: 0,
+      timeframe: 0,
+      annual: 0,
+    },
+    down_volatility: {
+      candle: 0,
+      timeframe: 0,
+      annual: 0,
+    },
     drawdown: {
       max: 0,
       peak: 0,
@@ -122,7 +144,7 @@ const usdc: WeightedCryptoPoint = {
       peak_time: 0,
       trough_time: 0,
     },
-    rally: {
+    runup: {
       max: 0,
       peak: 0,
       trough: 0,

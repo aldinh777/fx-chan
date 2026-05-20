@@ -89,7 +89,7 @@
         <th>PAIR</th>
         <th>NOW</th>
         <th>OLD</th>
-        <th>{tf.activeCrypto.label} RETURN</th>
+        <th>{tf.crypto.label} RETURN</th>
       </tr>
     </thead>
     <tbody>

@@ -11,15 +11,15 @@
     mode?: "crypto" | "fx";
   }>();
 
-  $effect(() => save("tfCrypto", tf.activeCrypto));
-  $effect(() => save("tfFx", tf.activeFx));
+  $effect(() => save("tfCrypto", tf.crypto));
+  $effect(() => save("tfFx", tf.fx));
 
   function setCrypto(tfi: CryptoTimeframe) {
-    tf.activeCrypto = tfi;
+    tf.crypto = tfi;
   }
 
   function setFx(tfi: FxTimeframe) {
-    tf.activeFx = tfi;
+    tf.fx = tfi;
   }
 </script>
 
@@ -31,7 +31,7 @@
       {#each tf.cryptoTimeframes as tfi}
         <button
           class="tf-btn"
-          class:active={tf.activeCrypto.label === tfi.label}
+          class:active={tf.crypto.label === tfi.label}
           onclick={() => setCrypto(tfi)}
         >
           {tfi.label}
@@ -47,7 +47,7 @@
       {#each tf.fxTimeframes as tfi}
         <button
           class="tf-btn"
-          class:active={tf.activeFx.label === tfi.label}
+          class:active={tf.fx.label === tfi.label}
           onclick={() => setFx(tfi)}
         >
           {tfi.label}

@@ -1,6 +1,6 @@
 import { tf } from "../../stores/timeframe.svelte";
 import { wl } from "../../stores/watchlist.svelte";
-import { safeDiv, type ForexItem, type WeightedFxPoint } from "../market";
+import { type ForexItem, type WeightedFxPoint } from "../market";
 
 export interface ForexPoint {
   time: number;
@@ -87,7 +87,7 @@ export async function calculateForex(
   quote: ForexItem,
 ): Promise<WeightedFxPoint | null> {
   try {
-    const range = tf.activeFx.days;
+    const range = tf.fx.days;
     const raw = await fetchForex(quote.symbol);
 
     if (!raw.length) {
@@ -136,26 +136,23 @@ export async function calculateForex(
 
     const count = points.length;
 
-    const avg = safeDiv(sum, count);
-    const avg_returns = safeDiv(returns_sum, returns.length);
+    const avg = sum / count;
+    const avg_returns = returns_sum / returns.length;
 
     const volatility = Math.sqrt(
-      safeDiv(
-        returns.reduce((s, r) => {
-          const d = r - avg_returns;
-          return s + d * d;
-        }, 0),
-        returns.length,
-      ),
+      returns.reduce((s, r) => {
+        const d = r - avg_returns;
+        return s + d * d;
+      }, 0) / returns.length,
     );
 
-    const growth = safeDiv(t1 - t0, t0);
-    const avg_growth = safeDiv(avg - t0, t0);
+    const growth = (t1 - t0) / t0;
+    const avg_growth = (avg - t0) / t0;
     const log_return = Math.log(t1 / t0);
 
-    const momentum = safeDiv(growth - avg_growth, volatility);
+    const momentum = (growth - avg_growth) / volatility;
 
-    const sharpe = safeDiv(growth, volatility);
+    const sharpe = growth / volatility;
 
     const trend_quality = Math.sqrt(
       Math.max(momentum, 0) * Math.max(sharpe, 0),

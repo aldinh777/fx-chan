@@ -17,7 +17,7 @@
     }, 0),
   );
 
-  type SortKey = "return" | "momentum" | "volatility" | "drawdown" | "holding";
+  type SortKey = "return" | "volatility" | "sharpe" | "drawdown" | "holding";
 
   let sortBy = $state<SortKey>(load("sortBy", "return"));
   let sortDesc = $state(load("sortDesc", true));
@@ -28,8 +28,8 @@
 
   const sortOptions: { label: string; value: SortKey }[] = [
     { label: "Return", value: "return" },
-    { label: "Momentum", value: "momentum" },
     { label: "Volatility", value: "volatility" },
+    { label: "Sharpe", value: "sharpe" },
     { label: "Max DD", value: "drawdown" },
     { label: "Holding", value: "holding" },
   ];
@@ -39,11 +39,11 @@
   function getSortValue(p: WeightedCryptoPoint) {
     switch (sortBy) {
       case "return":
-        return p.performance.growth;
-      case "momentum":
-        return p.performance.momentum;
+        return p.performance.simple_return;
       case "volatility":
-        return p.risk.volatility;
+        return p.risk.volatility.timeframe;
+      case "sharpe":
+        return p.performance.sharpe.timeframe;
       case "drawdown":
         return p.risk.drawdown.max;
       case "holding":
@@ -64,7 +64,7 @@
 </script>
 
 <div class="panel">
-  <strong>Asset Ranking ({tf.activeCrypto.label})</strong>
+  <strong>Asset Ranking ({tf.crypto.label})</strong>
 
   <div class="timeframe-selector">
     <span class="toolbar-label">Sort By:</span>
@@ -118,32 +118,32 @@
 
         <div class="right">
           <div class="metric-label">
-            {sortItem?.label} ({tf.activeCrypto.label})
+            {sortItem?.label} ({tf.crypto.label})
           </div>
 
           {#if sortBy === "return"}
             <div
-              class="metric-value {p.performance.growth >= 0
+              class="metric-value {p.performance.simple_return >= 0
                 ? 'text-green'
                 : 'text-red'}"
             >
-              {(p.performance.growth * 100).toFixed(2)}%
-            </div>
-          {:else if sortBy === "momentum"}
-            <div
-              class="metric-value {p.performance.momentum > 1
-                ? 'text-yellow'
-                : 'text-muted'}"
-            >
-              {p.performance.momentum.toFixed(2)}
+              {(p.performance.simple_return * 100).toFixed(2)}%
             </div>
           {:else if sortBy === "volatility"}
             <div
-              class="metric-value {p.risk.volatility >= 0.1
+              class="metric-value {p.risk.volatility.timeframe >= 0.1
                 ? 'text-purple'
                 : 'text-muted'}"
             >
-              {(p.risk.volatility * 100).toFixed(2)}%
+              {(p.risk.volatility.timeframe * 100).toFixed(2)}%
+            </div>
+          {:else if sortBy === "sharpe"}
+            <div
+              class="metric-value {p.performance.sharpe.timeframe > 1
+                ? 'text-yellow'
+                : 'text-muted'}"
+            >
+              {p.performance.sharpe.timeframe.toFixed(2)}
             </div>
           {:else if sortBy === "drawdown"}
             <div

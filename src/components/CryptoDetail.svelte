@@ -4,7 +4,8 @@
   import { formatPrice, formatVolume } from "../lib/formatter";
   import { portfolioIndex, type WeightedCryptoPoint } from "../lib/market";
   import { app } from "../stores/app.svelte";
-  import { correlation, type CorelationMatrix } from "../lib/quant";
+  import { _correlation, type CorelationMatrix } from "../lib/quant";
+  import { tf } from "../stores/timeframe.svelte";
 
   const coin: WeightedCryptoPoint | undefined = $derived(
     app.cryptoData.find((c) => c.coin.symbol === app.coin),
@@ -20,6 +21,16 @@
     month: "2-digit",
     day: "2-digit",
   });
+
+  let timeOptions = $derived([
+    { label: `Candle (${tf.crypto.interval})`, value: "candle" },
+    {
+      label: `Timeframe (${tf.crypto.label.toLowerCase()})`,
+      value: "timeframe",
+    },
+    { label: "Annually (365d)", value: "annual" },
+  ]);
+  let time = $state("timeframe");
 
   function bullRetrace(trough: number, peak: number) {
     const r = peak - trough;
@@ -74,7 +85,7 @@
   let loading = $derived(coins.length === 0);
 
   async function calculateCorelations() {
-    matrix = await correlation();
+    matrix = await _correlation();
   }
 
   $effect(() => {
@@ -155,16 +166,16 @@
 
     {#if tab === "info"}
       {@const bullFib = bullRetrace(
-        coin.risk.rally.trough,
-        coin.risk.rally.peak,
+        coin.risk.runup.trough,
+        coin.risk.runup.peak,
       )}
       {@const bearFib = bearRetrace(
         coin.risk.drawdown.peak,
         coin.risk.drawdown.trough,
       )}
       {@const bullRatio =
-        (coin.risk.rally.peak - coin.price.t1) /
-        (coin.risk.rally.peak - coin.risk.rally.trough)}
+        (coin.risk.runup.peak - coin.price.t1) /
+        (coin.risk.runup.peak - coin.risk.runup.trough)}
       {@const bearRatio =
         (coin.price.t1 - coin.risk.drawdown.trough) /
         (coin.risk.drawdown.peak - coin.risk.drawdown.trough)}
@@ -176,7 +187,8 @@
           <div class="progress-bar fib-bar">
             <!-- Main Fill -->
             <div
-              class="progress-fill {coin.performance.growth < 0 && 'negative'}"
+              class="progress-fill {coin.performance.simple_return < 0 &&
+                'negative'}"
               style="width: {getRangePercentage(
                 coin.price.t1,
                 coin.price.low,
@@ -210,7 +222,7 @@
 
             <!-- Current Price -->
             <div
-              class="price-marker current {coin.performance.growth > 0
+              class="price-marker current {coin.performance.simple_return > 0
                 ? ''
                 : 'negative'}"
               style="left: {getRangePercentage(
@@ -243,7 +255,7 @@
             </span>
 
             <span
-              class=" text-small text-{coin.performance.growth > 0
+              class=" text-small text-{coin.performance.simple_return > 0
                 ? 'green'
                 : 'red'}"
             >
@@ -265,7 +277,7 @@
               style="width: {getRangePercentage(
                 coin.price.t1,
                 bullFib.extended,
-                coin.risk.rally.peak,
+                coin.risk.runup.peak,
               )}%;"
             ></div>
 
@@ -275,7 +287,7 @@
               style="left: {getRangePercentage(
                 bullFib.normal,
                 bullFib.extended,
-                coin.risk.rally.peak,
+                coin.risk.runup.peak,
               )}%"
             >
               <span>&phi;⁻¹</span>
@@ -287,7 +299,7 @@
               style="left: {getRangePercentage(
                 coin.price.t1,
                 bullFib.extended,
-                coin.risk.rally.peak,
+                coin.risk.runup.peak,
               )}%"
             >
               <span>{bullRatio.toFixed(3)}</span>
@@ -304,8 +316,8 @@
             </span>
 
             <span class="text-muted text-small">
-              {fmt.format(new Date(coin.risk.rally.peak_time))} ${formatPrice(
-                coin.risk.rally.peak,
+              {fmt.format(new Date(coin.risk.runup.peak_time))} ${formatPrice(
+                coin.risk.runup.peak,
               )} :P
             </span>
           </div>
@@ -316,8 +328,8 @@
             </span>
 
             <span class="text-muted text-small">
-              {fmt.format(new Date(coin.risk.rally.trough_time))} ${formatPrice(
-                coin.risk.rally.trough,
+              {fmt.format(new Date(coin.risk.runup.trough_time))} ${formatPrice(
+                coin.risk.runup.trough,
               )} :T
             </span>
           </div>
@@ -395,90 +407,150 @@
         </div>
       </div>
 
-      <!-- PERFORMANCE -->
-      <div class="section">
-        <div class="section-title">Performance</div>
-        <div class="grid">
-          <div class="card">
-            <div class="k">Momentum</div>
-            <div class="v">{coin.performance.momentum.toFixed(3)}</div>
+      <div>
+        <div class="timeframe-selector">
+          <span class="toolbar-label">Display Data</span>
+          <div class="tf-buttons" style="display: inline-block;">
+            {#each timeOptions as opt}
+              <button
+                class="tf-btn"
+                class:active={time === opt.value}
+                onclick={() => (time = opt.value)}
+              >
+                {opt.label}
+              </button>
+            {/each}
           </div>
+        </div>
 
-          <div class="card">
-            <div class="k">Sharpe</div>
-            <div class="v">{coin.performance.sharpe.toFixed(3)}</div>
-          </div>
-
-          <div class="card">
-            <div class="k">Growth Rate</div>
-            <div class="v">
-              {(coin.performance.log_return - pi).toFixed(3)}
+        <!-- PERFORMANCE -->
+        <div class="section">
+          <div class="section-title">Performance</div>
+          <div class="grid">
+            <div class="card">
+              <div class="k">Sharpe Ratio</div>
+              <div class="v">
+                {#if time === "candle"}
+                  {coin.performance.sharpe.candle.toFixed(2)}
+                {:else if time === "timeframe"}
+                  {coin.performance.sharpe.timeframe.toFixed(2)}
+                {:else}
+                  {coin.performance.sharpe.annual.toFixed(2)}
+                {/if}
+              </div>
             </div>
-          </div>
 
-          <div class="card highlight">
-            <div class="k">Growth</div>
-            <div
-              class="v"
-              class:positive={coin.performance.growth >= 0}
-              class:negative={coin.performance.growth < 0}
-            >
-              {(coin.performance.growth * 100).toFixed(2)}%
+            <div class="card">
+              <div class="k">Sortino Ratio</div>
+              <div class="v">
+                {#if time === "candle"}
+                  {coin.performance.sortino.candle.toFixed(2)}
+                {:else if time === "timeframe"}
+                  {coin.performance.sortino.timeframe.toFixed(2)}
+                {:else}
+                  {coin.performance.sortino.annual.toFixed(2)}
+                {/if}
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="k">Average Return</div>
+              <div class="v">
+                {#if time === "candle"}
+                  {(coin.performance.avg_return.candle * 100).toFixed(3)}%
+                {:else if time === "timeframe"}
+                  {(coin.performance.avg_return.timeframe * 100).toFixed(2)}%
+                {:else}
+                  {(coin.performance.avg_return.annual * 100).toFixed(2)}%
+                {/if}
+              </div>
+            </div>
+
+            <div class="card highlight">
+              <div class="k">Return</div>
+              <div
+                class="v"
+                class:positive={coin.performance.simple_return >= 0}
+                class:negative={coin.performance.simple_return < 0}
+              >
+                {(coin.performance.simple_return * 100).toFixed(2)}%
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- VOLUME -->
-      <div class="section">
-        <div class="section-title">Volume</div>
-        <div class="grid">
-          <div class="card">
-            <div class="k">Total</div>
-            <div class="v">{formatVolume(coin.volume.vol)}</div>
-          </div>
+        <!-- RISK -->
+        <div class="section">
+          <div class="section-title">Risk Profile</div>
+          <div class="grid">
+            <div class="card">
+              <div class="k">Volatility</div>
+              <div class="v">
+                {#if time === "candle"}
+                  {(coin.risk.volatility.candle * 100).toFixed(2)}%
+                {:else if time === "timeframe"}
+                  {(coin.risk.volatility.timeframe * 100).toFixed(2)}%
+                {:else}
+                  {(coin.risk.volatility.annual * 100).toFixed(2)}%
+                {/if}
+              </div>
+            </div>
 
-          <div class="card">
-            <div class="k">Average</div>
-            <div class="v">{formatVolume(coin.volume.avg)}</div>
-          </div>
+            <div class="card">
+              <div class="k">Down Volatility</div>
+              <div class="v">
+                {#if time === "candle"}
+                  {(coin.risk.down_volatility.candle * 100).toFixed(2)}%
+                {:else if time === "timeframe"}
+                  {(coin.risk.down_volatility.timeframe * 100).toFixed(2)}%
+                {:else}
+                  {(coin.risk.down_volatility.annual * 100).toFixed(2)}%
+                {/if}
+              </div>
+            </div>
 
-          <div class="card">
-            <div class="k">Last</div>
-            <div class="v">{formatVolume(coin.volume.v1)}</div>
-          </div>
+            <div class="card">
+              <div class="k">Max Runup</div>
+              <div class="v">
+                <span class="text-green">
+                  {(coin.risk.runup.max * 100).toFixed(2)}%
+                </span>
+              </div>
+            </div>
 
-          <div class="card highlight">
-            <div class="k">Intensity</div>
-            <div class="v">{coin.volume.intensity.toFixed(3)}</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- RISK -->
-      <div class="section">
-        <div class="section-title">Risk Profile</div>
-        <div class="grid">
-          <div class="card">
-            <div class="k">Volatility</div>
-            <div class="v">{(coin.risk.volatility * 100).toFixed(2)}%</div>
-          </div>
-
-          <div class="card">
-            <div class="k">Max Rally</div>
-            <div class="v">
-              <span class="text-green">
-                {(coin.risk.rally.max * 100).toFixed(2)}%
-              </span>
+            <div class="card danger">
+              <div class="k">Max Drawdown</div>
+              <div class="v">
+                <span class="text-red">
+                  {(coin.risk.drawdown.max * 100).toFixed(2)}%
+                </span>
+              </div>
             </div>
           </div>
+        </div>
 
-          <div class="card danger">
-            <div class="k">Max Drawdown</div>
-            <div class="v">
-              <span class="text-red">
-                {(coin.risk.drawdown.max * 100).toFixed(2)}%
-              </span>
+        <!-- VOLUME -->
+        <div class="section">
+          <div class="section-title">Volume</div>
+          <div class="grid">
+            <div class="card">
+              <div class="k">Total</div>
+              <div class="v">{formatVolume(coin.volume.vol)}</div>
+            </div>
+
+            <div class="card">
+              <div class="k">Average</div>
+              <div class="v">{formatVolume(coin.volume.avg)}</div>
+            </div>
+
+            <div class="card">
+              <div class="k">Last</div>
+              <div class="v">{formatVolume(coin.volume.v1)}</div>
+            </div>
+
+            <div class="card highlight">
+              <div class="k">Intensity</div>
+              <div class="v">{coin.volume.intensity.toFixed(3)}</div>
             </div>
           </div>
         </div>

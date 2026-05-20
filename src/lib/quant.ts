@@ -1,7 +1,7 @@
 import { wl } from "../stores/watchlist.svelte";
 import { fetchCoin } from "./fetchers/hyperliquid";
 
-export function calcSum(items: number[]) {
+export function _sum(items: number[]) {
   let sum = 0;
   for (const p of items) {
     sum += p;
@@ -9,36 +9,45 @@ export function calcSum(items: number[]) {
   return sum;
 }
 
-export function calcMean(items: number[]) {
-  return calcSum(items) / items.length;
+export function _avg(a: number[]) {
+  return _sum(a) / a.length;
 }
 
-export function calcReturns(prices: number[]) {
-  const rets: number[] = [];
-  for (let i = 0; i < prices.length - 1; i++) {
-    const t0 = prices[i];
-    const t1 = prices[i + 1];
-    rets.push(Math.log(t1 / t0));
+export type ReturnSeries = {
+  diff: number[];
+  log: number[];
+  cum_log: number[];
+};
+
+export function _returns(p: number[]): ReturnSeries {
+  const diff: number[] = [];
+  const log: number[] = [];
+  const cum_log: number[] = [];
+  const p0 = p[0];
+  for (let i = 0; i < p.length - 1; i++) {
+    const t0 = p[i];
+    const t1 = p[i + 1];
+    diff.push(t1 - t0);
+    log.push(Math.log(t1 / t0));
+    cum_log.push(Math.log(t1 / p0));
   }
-  return rets;
+  return { diff, log, cum_log };
 }
 
-export function calcDeviations(returns: number[]) {
-  const mean = calcMean(returns);
-  return returns.map((r) => r - mean);
+export function _variance(r: number[]) {
+  const avg = _avg(r);
+  return _avg(r.map((r) => (r - avg) ** 2));
 }
 
-export function calcCovariance(d0: number[], d1: number[]) {
-  return calcSum(d0.map((d, i) => d * d1[i])) / (d0.length - 1);
-}
-
-export function calcVolatility(d0: number[]) {
-  return Math.sqrt(calcSum(d0.map((d) => d ** 2)) / (d0.length - 1));
+export function _covariance(a: number[], b: number[]) {
+  const avg_a = _avg(a);
+  const avg_b = _avg(b);
+  return _avg(a.map((a, i) => (a - avg_a) * (b[i] - avg_b)));
 }
 
 export type CorelationMatrix = Record<string, Record<string, number>>;
 
-export async function correlation(): Promise<CorelationMatrix> {
+export async function _correlation(): Promise<CorelationMatrix> {
   const matrix: CorelationMatrix = {};
   const setMatrix = (c0: string, c1: string, v: number) => {
     if (!matrix[c0]) {
@@ -55,13 +64,13 @@ export async function correlation(): Promise<CorelationMatrix> {
         setMatrix(c0, c1, 1);
         continue;
       }
-      if (matrix[c0]?.[c1]) {
-        continue;
-      }
       const cc0 = await fetchCoin(c0);
       const cc1 = await fetchCoin(c1);
-      const covariance = calcCovariance(cc0.deviations, cc1.deviations);
-      setMatrix(c0, c1, covariance / (cc0.volatility * cc1.volatility));
+      const covariance = _covariance(cc0.returns.log, cc1.returns.log);
+      const covolatility =
+        Math.sqrt(_variance(cc0.returns.log)) *
+        Math.sqrt(_variance(cc1.returns.log));
+      setMatrix(c0, c1, covariance / covolatility);
     }
   }
 
