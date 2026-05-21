@@ -35,7 +35,7 @@ class AppStore {
     requestAnimationFrame(() => {
       this.chartPanel?.scrollIntoView({
         behavior: "smooth",
-        block: "center",
+        block: "start",
       });
     });
   }

@@ -1,5 +1,12 @@
 import { type WeightedCryptoPoint, type CryptoItem } from "../market";
-import { _avg, _returns, type ReturnSeries, _variance } from "../quant";
+import {
+  _avg,
+  _returns,
+  type ReturnSeries,
+  _variance,
+  _median,
+  _sum,
+} from "../quant";
 
 import { tf } from "./../../stores/timeframe.svelte";
 import { wl } from "./../../stores/watchlist.svelte";
@@ -7,23 +14,23 @@ import { wl } from "./../../stores/watchlist.svelte";
 const API = "https://api.hyperliquid.xyz/info";
 const HOURS = 60 * 60 * 1000;
 
-export interface CandleData<T = number> {
+export interface CandleData {
   // symbol & interval
   s: string;
   i: string;
 
   // open high low close
-  o: T;
-  h: T;
-  l: T;
-  c: T;
+  o: number;
+  h: number;
+  l: number;
+  c: number;
 
   // opening (t) & closing (T) time
   t: number;
   T: number;
 
   // volume & times traded
-  v: T;
+  v: number;
   n: number;
 }
 
@@ -78,7 +85,7 @@ export async function fetchCoin(symbol: string): Promise<CoinData> {
     });
 
     const candles: CandleData[] = (await res.json()).map(
-      (c: CandleData<string>): CandleData => ({
+      (c: any): CandleData => ({
         ...c,
         o: parseFloat(c.o),
         h: parseFloat(c.h),
@@ -172,22 +179,21 @@ export async function calculateCoin(
 ): Promise<WeightedCryptoPoint | null> {
   try {
     const coinData = await fetchCoin(coin.symbol);
-    const candles = coinData.candles;
 
-    if (!Array.isArray(candles) || candles.length === 0) {
+    if (coinData.candles.length === 0) {
       return null;
     }
 
-    const t0 = Number(candles.at(0)?.c);
-    const t1 = Number(candles.at(-1)?.c);
-    const v1 = Number(candles.at(-1)?.v);
+    const t0 = coinData.candles[0].c;
+    const t1 = coinData.candles[coinData.candles.length - 1].c;
+    const v1 = coinData.candles[coinData.candles.length - 1].v;
 
     if (!t0 || !t1) {
       return null;
     }
 
     // --- Calculate Metrix
-    const count = candles.length;
+    const count = coinData.candles.length;
 
     let peak = 0;
     let max_dd = 0;
@@ -209,17 +215,13 @@ export async function calculateCoin(
     let low = Infinity;
 
     let price_sum = 0;
-    let usd_volume_sum = 0;
 
-    for (const candle of candles) {
-      const h = Number(candle.h || candle.c);
-      const l = Number(candle.l || candle.c);
-      const c = Number(candle.c);
-      const v = Number(candle.v);
-      const t = candle.t;
+    const usd_volumes = [];
 
+    for (const { o, h, l, c, v, t } of coinData.candles) {
       // Volume Calculation
-      usd_volume_sum += v * c;
+      const ohlc_avg_price = (o + h + l + c) / 4;
+      usd_volumes.push(ohlc_avg_price);
 
       // Max Drawdown Logic
       if (h > peak) {
@@ -295,8 +297,12 @@ export async function calculateCoin(
     const sortino_timeframed = sortino * Math.sqrt(count);
     const sortino_annualized = sortino * Math.sqrt(tf.crypto.annualized);
 
-    const avg_volume = usd_volume_sum / count;
-    const intensity = (v1 * t1) / avg_volume;
+    // Volume
+    const sum_volume = _sum(usd_volumes);
+    const avg_volume = _avg(usd_volumes);
+    const median_volume = _median(usd_volumes);
+    const sample_volume_12 = _avg(usd_volumes.slice(-12));
+    const intensity = sample_volume_12 / median_volume;
 
     return {
       coin,
@@ -347,7 +353,14 @@ export async function calculateCoin(
           trough_time: rally_tlow,
         },
       },
-      volume: { v1, vol: usd_volume_sum, avg: avg_volume, intensity },
+      volume: {
+        v1,
+        s12: sample_volume_12,
+        vol: sum_volume,
+        avg: avg_volume,
+        median: median_volume,
+        intensity,
+      },
     };
   } catch {
     return null;

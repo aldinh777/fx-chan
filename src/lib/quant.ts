@@ -13,6 +13,16 @@ export function _avg(a: number[]) {
   return _sum(a) / a.length;
 }
 
+export function _median(a: number[]) {
+  const sorted = a.toSorted((a, b) => b - a);
+  const mid = (a.length - 1) / 2;
+  if (mid % 1 === 0) {
+    return sorted[mid];
+  } else {
+    return (sorted[Math.floor(mid)] + sorted[Math.ceil(mid)]) / 2;
+  }
+}
+
 export type ReturnSeries = {
   diff: number[];
   log: number[];

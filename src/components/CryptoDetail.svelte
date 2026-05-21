@@ -410,7 +410,7 @@
       <div>
         <div class="timeframe-selector">
           <span class="toolbar-label">Display Data</span>
-          <div class="tf-buttons" style="display: inline-block;">
+          <div class="tf-buttons">
             {#each timeOptions as opt}
               <button
                 class="tf-btn"
@@ -539,13 +539,13 @@
             </div>
 
             <div class="card">
-              <div class="k">Average</div>
-              <div class="v">{formatVolume(coin.volume.avg)}</div>
+              <div class="k">Median</div>
+              <div class="v">{formatVolume(coin.volume.median)}</div>
             </div>
 
             <div class="card">
-              <div class="k">Last</div>
-              <div class="v">{formatVolume(coin.volume.v1)}</div>
+              <div class="k">Recent (12)</div>
+              <div class="v">{formatVolume(coin.volume.s12)}</div>
             </div>
 
             <div class="card highlight">

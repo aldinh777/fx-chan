@@ -77,8 +77,10 @@ export interface WeightedCryptoPoint {
   };
   volume: {
     v1: number;
+    s12: number;
     vol: number;
     avg: number;
+    median: number;
     intensity: number;
   };
 }
@@ -152,7 +154,7 @@ const usdc: WeightedCryptoPoint = {
       trough_time: 0,
     },
   },
-  volume: { v1: 0, vol: 0, avg: 0, intensity: 0 },
+  volume: { v1: 0, s12: 0, vol: 0, avg: 0, median: 0, intensity: 0 },
 };
 
 export function weightCryptoPoints(data: WeightedCryptoPoint[]) {
