@@ -185,9 +185,6 @@
   display: flex;
   align-items: center;
   gap: 8px;
-
-  margin-top: 10px;
-  margin-bottom: 2px;
 }
 
 .sort-label {

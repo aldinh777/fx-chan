@@ -11,6 +11,7 @@
   import CryptoIcon from "./CryptoIcon.svelte";
   import TimeFrameBar from "./TimeFrameBar.svelte";
   import CryptoDetail from "./CryptoDetail.svelte";
+  import RiskMetrix from "./RiskMetrix.svelte";
 
   interface CoinPair {
     symbol: string;
@@ -180,6 +181,7 @@
   </div>
 
   <TimeFrameBar />
+  <RiskMetrix />
 
   <div bind:this={chart.chartContainer} class="chart-container">
     {#if loading}

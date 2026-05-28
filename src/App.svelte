@@ -31,7 +31,6 @@
     <CryptoMarkets />
   {:else if app.activeTab === "metrics"}
     <TradingView />
-    <RiskMetrix />
   {:else if app.activeTab === "watchlist"}
     <Watchlist />
   {/if}

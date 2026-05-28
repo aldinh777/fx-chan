@@ -56,11 +56,9 @@
   });
 </script>
 
-<div class="panel">
-  <strong>Asset Ranking ({tf.crypto.label})</strong>
-
+<div style="margin-bottom: 4px;">
   <div class="sort-selector">
-    <span class="sort-label">Sort By:</span>
+    <span class="toolbar-label">Sort</span>
 
     <div class="tf-buttons">
       {#each sortOptions as opt}
