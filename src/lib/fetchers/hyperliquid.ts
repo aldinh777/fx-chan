@@ -68,6 +68,11 @@ export async function fetchCoin(symbol: string): Promise<CoinData> {
 
   awaitFetching.add(tfsymbol);
 
+  const [prefix, coin] = symbol.split(":");
+  const apiCoin = coin
+    ? prefix.toLowerCase() + ":" + coin.toUpperCase()
+    : prefix.toUpperCase();
+
   try {
     const now = Date.now();
     const res = await fetch(API, {
@@ -76,7 +81,7 @@ export async function fetchCoin(symbol: string): Promise<CoinData> {
       body: JSON.stringify({
         type: "candleSnapshot",
         req: {
-          coin: symbol.toUpperCase(),
+          coin: apiCoin,
           interval: tf.crypto.interval,
           startTime: now - tf.crypto.hours * HOURS,
           endTime: now,

@@ -58,6 +58,11 @@
     return Math.max(0, Math.min(100, percentage));
   }
 
+  function trimSymbolPrefix(symbol: string) {
+    const [prefix, coin] = symbol.split(":");
+    return coin ? coin.toUpperCase() : prefix.toUpperCase();
+  }
+
   let matrix: CorelationMatrix = $state({});
   let coins = $derived.by(() => {
     const keys = Object.keys(matrix);
@@ -565,7 +570,7 @@
               <tr>
                 <th></th>
                 {#each coins as c}
-                  <th>{c.toUpperCase()}</th>
+                  <th>{trimSymbolPrefix(c)}</th>
                 {/each}
               </tr>
             </thead>
@@ -573,7 +578,7 @@
             <tbody>
               {#each coins as row}
                 <tr>
-                  <td class="row">{row.toUpperCase()}</td>
+                  <td class="row">{trimSymbolPrefix(row)}</td>
 
                   {#each coins as col}
                     {@const v = matrix[row]?.[col]}
