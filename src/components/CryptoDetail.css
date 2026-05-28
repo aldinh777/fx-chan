@@ -266,6 +266,8 @@
   overflow: auto;
   -webkit-overflow-scrolling: touch;
   border-radius: 10px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 
 /* keep table large enough to force horizontal scroll */

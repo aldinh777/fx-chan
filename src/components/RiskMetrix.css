@@ -2,7 +2,7 @@
   overflow-x: auto;
   overflow-y: hidden;
 
-  margin-top: 14px;
+  margin-top: 8px;
 
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
@@ -39,12 +39,10 @@
 ========================= */
 
 .metric-card {
-  width: 170px;
-  min-height: 132px;
-
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 8px;
 
   padding: 12px;
 
@@ -92,7 +90,7 @@
 
 .price {
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: var(--muted);
 }
 
 /* =========================
@@ -108,7 +106,7 @@
 .metric-label {
   font-size: 0.62rem;
 
-  color: var(--text-muted);
+  color: var(--muted);
 
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -141,29 +139,7 @@
 
 .holding-qty {
   font-size: 0.68rem;
-  color: var(--text-muted);
-}
-
-/* =========================
-   Toolbar
-========================= */
-
-.toolbar-label {
-  font-size: 0.72rem;
-  color: var(--text-muted);
-}
-
-.timeframe-selector {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-
-  margin-top: 10px;
-}
-
-.tf-buttons {
-  display: flex;
-  flex-wrap: wrap;
+  color: var(--muted);
 }
 
 /* =========================
@@ -171,11 +147,6 @@
 ========================= */
 
 @media (max-width: 600px) {
-  .metric-card {
-    width: 150px;
-    min-height: 122px;
-  }
-
   .metric-value {
     font-size: 1.1rem;
   }

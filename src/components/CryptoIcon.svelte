@@ -1,9 +1,11 @@
 <script lang="ts">
   let { symbol, size = 24 } = $props();
-  const [prefix, coin] = symbol.split(":");
-  const apiCoin = coin
-    ? prefix.toLowerCase() + ":" + coin.toUpperCase()
-    : prefix.toUpperCase();
+  const apiCoin = $derived.by(() => {
+    const [prefix, coin] = symbol.split(":");
+    return coin
+      ? prefix.toLowerCase() + ":" + coin.toUpperCase()
+      : prefix.toUpperCase();
+  });
 </script>
 
 <img

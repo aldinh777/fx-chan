@@ -2,7 +2,6 @@
   import "./RiskMetrix.css";
   import { ArrowDown, ArrowUp } from "lucide-svelte";
 
-  import { tf } from "../stores/timeframe.svelte";
   import { wl } from "../stores/watchlist.svelte";
 
   import CryptoIcon from "./CryptoIcon.svelte";
@@ -102,10 +101,6 @@
           </div>
 
           <div class="card-metric">
-            <div class="metric-label">
-              {sortItem?.label}
-            </div>
-
             {#if sortBy === "return"}
               <div
                 class="metric-value {p.performance.simple_return >= 0
