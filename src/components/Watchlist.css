@@ -2,159 +2,267 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 14px;
 }
 
-/* --- Panel & Controls --- */
+/* =========================
+   Controls
+========================= */
+
 .controls-p {
   display: flex;
-  flex-wrap: wrap;
-  margin: 12px 0px;
   gap: 8px;
+  margin-bottom: 14px;
 }
 
 .input {
-  flex-grow: 1;
+  flex: 1;
+  min-width: 0;
+
   padding: 10px 12px;
-  border-radius: 6px;
+
   border: 1px solid var(--border);
+  border-radius: 8px;
+
   background: var(--bg);
   color: inherit;
-  font-size: 16px; /* Prevents auto-zoom on mobile */
+
+  font-size: 16px;
 }
 
-/* --- Grid Layout --- */
+/* =========================
+   List Layout
+========================= */
+
 .card-grid {
-  display: grid;
-  /* Automatically creates columns based on available width. Fits mobile perfectly. */
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+
+  border-top: 1px solid var(--border);
 }
 
 .empty-state {
-  grid-column: 1 / -1;
   text-align: center;
   opacity: 0.5;
   padding: 32px 0;
 }
 
-/* --- Card Design --- */
+/* =========================
+   List Row
+========================= */
+
 .card-wl {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  background: rgba(255, 255, 255, 0.02); /* Slight contrast against panel */
-  transition: opacity 0.2s ease;
+  display: grid;
+
+  grid-template-columns:
+    minmax(80px, 120px)
+    1fr
+    auto;
+
+  align-items: center;
+
   gap: 16px;
+
+  padding: 12px 4px;
+
+  border-bottom: 1px solid var(--border);
+
+  background: transparent;
+
+  transition:
+    opacity 0.2s ease,
+    background 0.15s ease;
+}
+
+.card-wl:hover {
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .hidden-card {
-  opacity: 0.4;
+  opacity: 0.45;
+}
+
+/* =========================
+   Left Section
+========================= */
+
+.card-header-wl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .asset-symbol {
-  font-size: 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .badge {
-  font-size: 0.7em;
-  color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: bold;
+  width: fit-content;
+
+  font-size: 0.62rem;
+  font-weight: 700;
+
   text-transform: uppercase;
+
+  padding: 2px 6px;
+
+  border-radius: 999px;
+
+  color: white;
 }
 
 .badge.tracking {
-  background-color: #32756e;
-}
-.badge.ignored {
-  background-color: var(--red);
+  background: #32756e;
 }
 
-/* --- Card Body Metrics --- */
+.badge.ignored {
+  background: var(--red);
+}
+
+/* =========================
+   Middle Section
+========================= */
+
+.card-body {
+  display: flex;
+  align-items: center;
+}
+
 .metric-p {
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px;
 }
 
 .metric-label-p {
-  font-size: 0.75rem;
-  font-weight: bold;
+  font-size: 0.68rem;
+  font-weight: 700;
   color: var(--muted);
+  letter-spacing: 0.03em;
 }
 
 .metric-value-p {
-  font-size: 1rem;
+  font-size: 0.95rem;
   font-weight: 500;
 }
 
 .small-input {
   width: 100%;
+  max-width: 140px;
+
   padding: 6px 8px;
+
+  border-radius: 6px;
+
   text-align: left;
 }
 
-/* --- Card Actions --- */
+/* =========================
+   Actions
+========================= */
+
 .card-actions {
   display: flex;
-  gap: 8px;
-  margin-top: auto; /* Pushes buttons to the bottom if card heights vary */
+  align-items: center;
+  gap: 6px;
 }
 
-.card-actions .btn {
-  flex: 1; /* Makes buttons equal width */
-  padding: 8px 0;
-  font-size: 0.85rem;
-}
-
-/* --- Confirmation Flow --- */
 .confirm-mode {
   display: flex;
-  flex-direction: column;
-  width: 100%;
-  gap: 8px;
+  align-items: center;
+  gap: 6px;
 }
 
 .confirm-text {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: var(--red);
-  text-align: center;
+  margin-right: 4px;
 }
 
-.confirm-buttons {
+/* =========================
+   Icon Buttons
+========================= */
+
+.icon-btn {
+  width: 34px;
+  height: 34px;
+
   display: flex;
-  width: 100%;
-  gap: 8px;
-}
+  align-items: center;
+  justify-content: center;
 
-.confirm-buttons .btn {
-  flex: 1;
-}
+  border: none;
+  border-radius: 8px;
 
-/* --- Button Styles --- */
-.btn-danger {
-  background-color: var(--red);
-  color: white;
-  border: 1px solid var(--red);
-}
-
-.btn-cancel {
-  background-color: transparent;
-  border: 1px solid var(--border);
-  color: inherit;
-}
-
-.btn-danger-outline {
   background: transparent;
-  color: var(--red);
-  border: 1px solid var(--red);
+  color: var(--muted);
+
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.12s ease;
 }
 
-.btn-danger-outline:hover {
-  background: var(--red);
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
   color: white;
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
+
+.icon-btn.danger {
+  color: #ff6b6b;
+}
+
+.icon-btn.danger:hover {
+  background: rgba(255, 80, 80, 0.08);
+  color: #ff8080;
+}
+
+/* =========================
+   Mobile
+========================= */
+@media (max-width: 640px) {
+  .controls-p {
+    flex-direction: column;
+  }
+
+  .card-wl {
+    grid-template-columns:
+      minmax(72px, 88px)
+      1fr
+      auto;
+
+    gap: 10px;
+
+    padding: 10px 2px;
+  }
+
+  .asset-symbol {
+    font-size: 0.9rem;
+  }
+
+  .metric-label-p {
+    font-size: 0.62rem;
+  }
+
+  .metric-value-p {
+    font-size: 0.88rem;
+  }
+
+  .icon-btn {
+    width: 30px;
+    height: 30px;
+  }
+
+  .small-input {
+    max-width: 100px;
+  }
 }

@@ -32,12 +32,12 @@ class AppStore {
 
   updateCoin(coin: string) {
     this.coin = coin;
-    requestAnimationFrame(() => {
-      this.chartPanel?.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
-    });
+    // requestAnimationFrame(() => {
+    //   this.chartPanel?.scrollIntoView({
+    //     behavior: "smooth",
+    //     block: "start",
+    //   });
+    // });
   }
 
   invertCryptoPair() {
