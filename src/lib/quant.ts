@@ -1,5 +1,6 @@
 import { wl } from "../stores/watchlist.svelte";
 import { fetchCoin, type CoinData } from "./fetchers/hyperliquid";
+import type { CryptoItem } from "./market";
 
 export function _sum(items: number[]) {
   let sum = 0;
@@ -117,65 +118,91 @@ export interface IndexFactor {
   alpha: number;
 }
 
+const safeNum = (v: number) => (Number.isFinite(v) ? v : 0);
+const _coin_weight = (coin: CryptoItem, data: CoinData): number => {
+  if (wl.mode === "target_weight") {
+    return safeNum(coin.weight ?? 1);
+  }
+
+  // position_size mode (stabilized)
+  const pos = coin.position ?? 0;
+  const price = data.candles[data.candles.length - 1]?.c ?? 0;
+
+  return safeNum(Math.sign(pos) * Math.log1p(Math.abs(pos)) * price);
+};
+
 export async function _index_factor(): Promise<IndexFactor[]> {
   const coins = wl.cryptos.filter((p) => p.visible).map((p) => p.symbol);
+  if (coins.length === 0) return [];
+
   const cfx: Record<string, CoinData> = {};
+  await Promise.all(
+    coins.map(async (coin) => {
+      cfx[coin] = await fetchCoin(coin);
+    }),
+  );
 
-  for (const coin of coins) {
-    cfx[coin] = await fetchCoin(coin);
-  }
-
-  if (coins.length === 0) {
-    return [];
-  }
+  // =========================
+  // PREINDEX
+  // =========================
+  const cryptoMap = new Map(wl.cryptos.map((c) => [c.symbol, c]));
 
   // =========================
   // BUILD IDX RETURNS
   // =========================
-  const len = cfx[coins[0]].returns.log.length;
+  const len = Math.min(...coins.map((c) => cfx[c].returns.log.length));
   const idxReturns: number[] = [];
 
   for (let i = 0; i < len; i++) {
     let sum = 0;
-    let n = 0;
+    let wsum = 0;
+
     for (const coin of coins) {
       const v = cfx[coin].returns.log[i];
-      if (v == null || Number.isNaN(v)) {
-        continue;
-      }
-      sum += v;
-      n++;
+      if (!Number.isFinite(v)) continue;
+
+      const crypto = cryptoMap.get(coin)!;
+      const data = cfx[coin];
+
+      const w = _coin_weight(crypto, data);
+      if (!Number.isFinite(w) || w === 0) continue;
+
+      sum += v * w;
+      wsum += w;
     }
 
-    idxReturns.push(n ? sum / n : 0);
+    idxReturns.push(wsum ? sum / wsum : 0);
   }
 
   // =========================
   // IDX STATS
   // =========================
   const idxVariance = _variance(idxReturns);
-  const idxReturn = idxReturns.reduce((a, b) => a + b, 0);
+  const idxReturn = _avg(idxReturns);
+  const safeIdxVar = idxVariance || 1e-12;
 
   // =========================
   // FACTORS
   // =========================
-  const factors: {
-    coin: string;
-    correlation: number;
-    beta: number;
-    alpha: number;
-  }[] = [];
+  const factors: IndexFactor[] = [];
 
   for (const coin of coins) {
-    const returns = cfx[coin].returns.log;
+    const data = cfx[coin];
+    const returns = data.returns.log;
+
     const variance = _variance(returns);
     const covariance = _covariance(returns, idxReturns);
-    const correlation =
-      covariance / (Math.sqrt(variance) * Math.sqrt(idxVariance));
-    const beta = covariance / idxVariance;
-    const cumulativeReturn = returns.reduce((a, b) => a + b, 0);
+
+    const denom = Math.sqrt(variance) * Math.sqrt(idxVariance);
+
+    const correlation = denom ? covariance / denom : 0;
+    const beta = covariance / safeIdxVar;
+
+    const meanReturn = _avg(returns) * returns.length;
     const expected = beta * idxReturn;
-    const alpha = Math.exp(cumulativeReturn - expected) - 1;
+
+    const diff = Math.max(Math.min(meanReturn - expected, 50), -50);
+    const alpha = Math.exp(diff) - 1;
 
     factors.push({
       coin,

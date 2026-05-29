@@ -28,7 +28,10 @@
     { label: "Drawdown", value: "drawdown" },
   ];
 
-  let sortItem = $derived(sortOptions.find((s) => s.value === sortBy));
+  function trimSymbolPrefix(symbol: string) {
+    const [prefix, coin] = symbol.split(":");
+    return coin?.toUpperCase() ?? prefix.toUpperCase();
+  }
 
   function getSortValue(p: WeightedCryptoPoint) {
     switch (sortBy) {
@@ -91,7 +94,7 @@
 
             <div class="asset-meta">
               <div class="symbol">
-                {p.coin.symbol.toUpperCase()}
+                {trimSymbolPrefix(p.coin.symbol)}
               </div>
 
               <div class="price">
