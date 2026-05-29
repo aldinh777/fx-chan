@@ -3,7 +3,6 @@
 
   import CryptoMarkets from "./components/CryptoMarkets.svelte";
   import Navbar from "./components/Navbar.svelte";
-  import RiskMetrix from "./components/RiskMetrix.svelte";
   import Watchlist from "./components/Watchlist.svelte";
 
   import { ensureVersionUpdate } from "./lib/version-util";

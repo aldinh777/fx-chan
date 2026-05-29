@@ -1,5 +1,5 @@
 import { wl } from "../stores/watchlist.svelte";
-import { fetchCoin } from "./fetchers/hyperliquid";
+import { fetchCoin, type CoinData } from "./fetchers/hyperliquid";
 
 export function _sum(items: number[]) {
   let sum = 0;
@@ -76,11 +76,16 @@ export async function _correlation(): Promise<
   };
 
   const coins = wl.cryptos.filter((p) => p.visible).map((p) => p.symbol);
+  const cfx: Record<string, CoinData> = {};
+
+  for (const coin of coins) {
+    cfx[coin] = await fetchCoin(coin);
+  }
 
   for (const c0 of coins) {
     for (const c1 of coins) {
-      const cc0 = await fetchCoin(c0);
-      const cc1 = await fetchCoin(c1);
+      const cc0 = cfx[c0];
+      const cc1 = cfx[c1];
 
       const r0 = _avg(cc0.returns.log) * cc0.returns.log.length;
       const r1 = _avg(cc1.returns.log) * cc1.returns.log.length;
