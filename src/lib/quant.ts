@@ -57,32 +57,50 @@ export function _covariance(a: number[], b: number[]) {
 
 export type CorelationMatrix = Record<string, Record<string, number>>;
 
-export async function _correlation(): Promise<CorelationMatrix> {
+export async function _correlation(): Promise<
+  [corr: CorelationMatrix, beta: CorelationMatrix, alpha: CorelationMatrix]
+> {
   const matrix: CorelationMatrix = {};
-  const setMatrix = (c0: string, c1: string, v: number) => {
-    if (!matrix[c0]) {
-      matrix[c0] = {};
+  const betaMatrix: CorelationMatrix = {};
+  const alphaMatrix: CorelationMatrix = {};
+  const setMatrix = (
+    c0: string,
+    c1: string,
+    v: number,
+    o: CorelationMatrix = matrix,
+  ) => {
+    if (!o[c0]) {
+      o[c0] = {};
     }
-    matrix[c0][c1] = v;
+    o[c0][c1] = v;
   };
 
-  const coins = wl.cryptos.map((p) => p.symbol);
+  const coins = wl.cryptos.filter((p) => p.visible).map((p) => p.symbol);
 
   for (const c0 of coins) {
     for (const c1 of coins) {
-      if (c0 === c1) {
-        setMatrix(c0, c1, 1);
-        continue;
-      }
       const cc0 = await fetchCoin(c0);
       const cc1 = await fetchCoin(c1);
+
+      const r0 = _avg(cc0.returns.log) * cc0.returns.log.length;
+      const r1 = _avg(cc1.returns.log) * cc1.returns.log.length;
+
+      const variance0 = _variance(cc0.returns.log);
+      const variance1 = _variance(cc1.returns.log);
+
       const covariance = _covariance(cc0.returns.log, cc1.returns.log);
-      const covolatility =
-        Math.sqrt(_variance(cc0.returns.log)) *
-        Math.sqrt(_variance(cc1.returns.log));
-      setMatrix(c0, c1, covariance / covolatility);
+      const covolatility = Math.sqrt(variance0) * Math.sqrt(variance1);
+      const corelation = covariance / covolatility;
+      const beta = covariance / variance1;
+      const expected = beta * r1;
+      const alpha = r0 - expected;
+      const alphaPct = Math.exp(alpha) - 1;
+
+      setMatrix(c0, c1, corelation);
+      setMatrix(c0, c1, beta, betaMatrix);
+      setMatrix(c0, c1, alphaPct, alphaMatrix);
     }
   }
 
-  return matrix;
+  return [matrix, betaMatrix, alphaMatrix];
 }
