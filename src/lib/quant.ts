@@ -87,8 +87,8 @@ export async function _correlation(): Promise<
       const cc0 = cfx[c0];
       const cc1 = cfx[c1];
 
-      const r0 = _avg(cc0.returns.log) * cc0.returns.log.length;
-      const r1 = _avg(cc1.returns.log) * cc1.returns.log.length;
+      const r0 = cc0.returns.log.reduce((a, b) => a + b, 0);
+      const r1 = cc1.returns.log.reduce((a, b) => a + b, 0);
 
       const variance0 = _variance(cc0.returns.log);
       const variance1 = _variance(cc1.returns.log);
@@ -108,4 +108,82 @@ export async function _correlation(): Promise<
   }
 
   return [matrix, betaMatrix, alphaMatrix];
+}
+
+export interface IndexFactor {
+  coin: string;
+  correlation: number;
+  beta: number;
+  alpha: number;
+}
+
+export async function _index_factor(): Promise<IndexFactor[]> {
+  const coins = wl.cryptos.filter((p) => p.visible).map((p) => p.symbol);
+  const cfx: Record<string, CoinData> = {};
+
+  for (const coin of coins) {
+    cfx[coin] = await fetchCoin(coin);
+  }
+
+  if (coins.length === 0) {
+    return [];
+  }
+
+  // =========================
+  // BUILD IDX RETURNS
+  // =========================
+  const len = cfx[coins[0]].returns.log.length;
+  const idxReturns: number[] = [];
+
+  for (let i = 0; i < len; i++) {
+    let sum = 0;
+    let n = 0;
+    for (const coin of coins) {
+      const v = cfx[coin].returns.log[i];
+      if (v == null || Number.isNaN(v)) {
+        continue;
+      }
+      sum += v;
+      n++;
+    }
+
+    idxReturns.push(n ? sum / n : 0);
+  }
+
+  // =========================
+  // IDX STATS
+  // =========================
+  const idxVariance = _variance(idxReturns);
+  const idxReturn = idxReturns.reduce((a, b) => a + b, 0);
+
+  // =========================
+  // FACTORS
+  // =========================
+  const factors: {
+    coin: string;
+    correlation: number;
+    beta: number;
+    alpha: number;
+  }[] = [];
+
+  for (const coin of coins) {
+    const returns = cfx[coin].returns.log;
+    const variance = _variance(returns);
+    const covariance = _covariance(returns, idxReturns);
+    const correlation =
+      covariance / (Math.sqrt(variance) * Math.sqrt(idxVariance));
+    const beta = covariance / idxVariance;
+    const cumulativeReturn = returns.reduce((a, b) => a + b, 0);
+    const expected = beta * idxReturn;
+    const alpha = Math.exp(cumulativeReturn - expected) - 1;
+
+    factors.push({
+      coin,
+      correlation,
+      beta,
+      alpha,
+    });
+  }
+
+  return factors;
 }
