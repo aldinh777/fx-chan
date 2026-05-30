@@ -1,4 +1,133 @@
 <script lang="ts">
+  import { Network } from "vis-network/standalone";
+  import { DataSet } from "vis-data";
+
+  let networkEl: HTMLDivElement | undefined = $state();
+
+  let minThreshold = $state(0.6);
+  let maxThreshold = $state(1.0);
+
+  let network: Network | null = null;
+  let nodesDS: DataSet<any> | null = null;
+  let edgesDS: DataSet<any> | null = null;
+
+  function buildNodes() {
+    return Object.keys(corelationMatrix).map((coin) => ({
+      id: coin,
+      label: trimSymbolPrefix(coin),
+      shape: "dot",
+      size: 20,
+      font: {
+        color: "#ffffff",
+      },
+    }));
+  }
+
+  function buildEdges() {
+    const edges: any[] = [];
+    const coins = Object.keys(corelationMatrix);
+    for (let i = 0; i < coins.length; i++) {
+      for (let j = i + 1; j < coins.length; j++) {
+        const a = coins[i];
+        const b = coins[j];
+        const corr = corelationMatrix[a]?.[b];
+        if (corr == null) continue;
+
+        const strength = Math.abs(corr);
+        if (strength < minThreshold) continue;
+        if (strength > maxThreshold) continue;
+
+        let color;
+        if (corr > 0) {
+          if (strength > 0.9) color = "#dc2626";
+          else if (strength > 0.7) color = "#f97316";
+          else color = "#fbbf24";
+        } else {
+          if (strength > 0.9) color = "#16a34a";
+          else if (strength > 0.7) color = "#22c55e";
+          else color = "#86efac";
+        }
+
+        edges.push({
+          from: a,
+          to: b,
+          value: Math.abs(corr),
+          width: 1 + Math.abs(corr) * 8,
+          color,
+          title: `\n${trimSymbolPrefix(a)}\n↔\n${trimSymbolPrefix(b)}\n\nCorrelation: ${corr.toFixed(3)}`,
+        });
+      }
+    }
+    return edges;
+  }
+  const options = {
+    autoResize: true,
+    physics: {
+      stabilization: true,
+      barnesHut: {
+        gravitationalConstant: -1200,
+        springLength: 150,
+        springConstant: 0.02,
+      },
+    },
+    interaction: {
+      hover: true,
+      zoomView: true,
+      dragView: true,
+    },
+    nodes: {
+      shape: "dot",
+      font: {
+        color: "#ffffff",
+        size: 14,
+        strokeWidth: 3,
+        strokeColor: "#000000",
+      },
+    },
+    edges: {
+      smooth: true,
+    },
+  };
+
+  function initNetwork() {
+    if (!networkEl) return;
+
+    network?.destroy();
+
+    nodesDS = new DataSet(buildNodes());
+    edgesDS = new DataSet(buildEdges());
+
+    network = new Network(
+      networkEl,
+      {
+        nodes: nodesDS,
+        edges: edgesDS,
+      },
+      options,
+    );
+  }
+
+  $effect(() => {
+    if (networkEl && Object.keys(corelationMatrix).length > 0 && !network) {
+      initNetwork();
+    }
+  });
+
+  $effect(() => {
+    minThreshold;
+    maxThreshold;
+    if (!edgesDS) return;
+    edgesDS.clear();
+    edgesDS.add(buildEdges());
+  });
+
+  $effect(() => {
+    if (!nodesDS) return;
+    const currentNodes = buildNodes();
+    nodesDS.clear();
+    nodesDS.add(currentNodes);
+  });
+
   import {
     _correlation,
     _index_factor,
@@ -344,10 +473,48 @@
       </tbody>
     </table>
   </div>
+  <div>
+    <button
+      class="btn"
+      onclick={() => (minThreshold = Math.max(0, minThreshold - 0.05))}
+    >
+      -
+    </button>
+    <input type="range" min="0" max="1" step="0.05" bind:value={minThreshold} />
+    <button
+      class="btn"
+      onclick={() => (minThreshold = Math.min(1, minThreshold + 0.05))}
+    >
+      +
+    </button>
+    <span>MIN: {minThreshold}</span>
+  </div>
+  <div>
+    <button
+      class="btn"
+      onclick={() => (maxThreshold = Math.max(0, maxThreshold - 0.05))}
+    >
+      -
+    </button>
+    <input type="range" min="0" max="1" step="0.05" bind:value={maxThreshold} />
+    <button
+      class="btn"
+      onclick={() => (maxThreshold = Math.min(1, maxThreshold + 0.05))}
+    >
+      +
+    </button>
+    <span>MAX: {maxThreshold}</span>
+  </div>
+  <div bind:this={networkEl} class="network"></div>
 {/if}
 
 <style>
   .heatmap th {
     cursor: pointer;
+  }
+  .network {
+    width: 100%;
+    height: 600px;
+    border: 1px solid #ddd;
   }
 </style>
