@@ -6,7 +6,7 @@
 
   let networkEl: HTMLDivElement | undefined = $state();
 
-  let minThreshold = $state(0.6);
+  let minThreshold = $state(0.8);
   let maxThreshold = $state(1.0);
 
   let network: Network | null = null;
@@ -202,8 +202,8 @@
           },
           leaves: {
             label: {
-              position: "right",
-              align: "left",
+              position: "bottom",
+              align: "center",
             },
           },
           initialTreeDepth: -1,
@@ -224,7 +224,7 @@
     const distmx = corrmx.map((r) => r.map((v) => Math.sqrt(2 * (1 - v))));
     const tree = agnes(distmx, {
       isDistanceMatrix: true,
-      method: "ward2",
+      method: "ward",
     });
     const ltree = attachLabels(tree, symbols);
     const etree = toEChartsTree(ltree, symbols);
