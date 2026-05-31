@@ -9,6 +9,7 @@
 
   import { app } from "./stores/app.svelte";
   import TradingView from "./components/TradingView.svelte";
+  import RelationMatrix from "./components/RelationMatrix.svelte";
 
   ensureVersionUpdate();
 
@@ -30,6 +31,8 @@
     <CryptoMarkets />
   {:else if app.activeTab === "metrics"}
     <TradingView />
+  {:else if app.activeTab === "relation"}
+    <RelationMatrix />
   {:else if app.activeTab === "watchlist"}
     <Watchlist />
   {/if}

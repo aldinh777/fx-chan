@@ -7,6 +7,7 @@
   const tabs = [
     { id: "dashboard", label: "MARKET" },
     { id: "metrics", label: "METRICS" },
+    { id: "relation", label: "CORELATION" },
     { id: "watchlist", label: "WATCHLIST" },
   ];
 

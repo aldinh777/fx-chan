@@ -8,8 +8,11 @@
   let maxThreshold = $state(1.0);
 
   let network: Network | null = null;
-  let nodesDS: DataSet<any> | null = null;
-  let edgesDS: DataSet<any> | null = null;
+  let nodes: DataSet<any> | null = null;
+  let edges: DataSet<any> | null = null;
+
+  const step = 0.02;
+  const roundStep = (v: number) => Math.round(v * 50) / 50;
 
   function buildNodes() {
     return Object.keys(corelationMatrix).map((coin) => ({
@@ -17,6 +20,8 @@
       label: trimSymbolPrefix(coin),
       shape: "dot",
       size: 20,
+      color: "#3b82f6",
+      originalColor: "#3b82f6",
       font: {
         color: "#ffffff",
       },
@@ -54,6 +59,7 @@
           value: Math.abs(corr),
           width: 1 + Math.abs(corr) * 8,
           color,
+          originalColor: color,
           title: `\n${trimSymbolPrefix(a)}\n↔\n${trimSymbolPrefix(b)}\n\nCorrelation: ${corr.toFixed(3)}`,
         });
       }
@@ -94,17 +100,57 @@
 
     network?.destroy();
 
-    nodesDS = new DataSet(buildNodes());
-    edgesDS = new DataSet(buildEdges());
+    nodes = new DataSet(buildNodes());
+    edges = new DataSet(buildEdges());
 
     network = new Network(
       networkEl,
       {
-        nodes: nodesDS,
-        edges: edgesDS,
+        nodes: nodes,
+        edges: edges,
       },
       options,
     );
+
+    network.on("hoverNode", ({ node }) => {
+      if (!network || !nodes || !edges) return;
+      const connectedNodes = new Set([
+        node,
+        ...network.getConnectedNodes(node),
+      ]);
+      const connectedEdges = new Set(network.getConnectedEdges(node));
+      nodes.update(
+        nodes.get().map((n) => ({
+          id: n.id,
+          color: connectedNodes.has(n.id)
+            ? n.originalColor
+            : "rgba(180,180,180,0.2)",
+        })),
+      );
+      edges.update(
+        edges.get().map((e) => ({
+          id: e.id,
+          color: connectedEdges.has(e.id)
+            ? e.originalColor
+            : "rgba(180,180,180,0.05)",
+        })),
+      );
+    });
+    network.on("blurNode", () => {
+      if (!network || !nodes || !edges) return;
+      nodes.update(
+        nodes.get().map((n) => ({
+          id: n.id,
+          color: n.originalColor,
+        })),
+      );
+      edges.update(
+        edges.get().map((e) => ({
+          id: e.id,
+          color: e.originalColor,
+        })),
+      );
+    });
   }
 
   $effect(() => {
@@ -116,16 +162,16 @@
   $effect(() => {
     minThreshold;
     maxThreshold;
-    if (!edgesDS) return;
-    edgesDS.clear();
-    edgesDS.add(buildEdges());
+    if (!edges) return;
+    edges.clear();
+    edges.add(buildEdges());
   });
 
   $effect(() => {
-    if (!nodesDS) return;
+    if (!nodes) return;
     const currentNodes = buildNodes();
-    nodesDS.clear();
-    nodesDS.add(currentNodes);
+    nodes.clear();
+    nodes.add(currentNodes);
   });
 
   import {
@@ -134,6 +180,7 @@
     type CorelationMatrix,
     type IndexFactor,
   } from "../lib/quant";
+  import TimeFrameBar from "./TimeFrameBar.svelte";
 
   type Mode = "corelation" | "beta" | "alpha";
 
@@ -365,6 +412,8 @@
   }
 </script>
 
+<TimeFrameBar />
+
 <div>
   <button class="btn" onclick={() => (mode = "corelation")}>
     corelation
@@ -476,34 +525,38 @@
   <div>
     <button
       class="btn"
-      onclick={() => (minThreshold = Math.max(0, minThreshold - 0.05))}
+      onclick={() =>
+        (minThreshold = roundStep(Math.max(0, minThreshold - step)))}
     >
       -
     </button>
-    <input type="range" min="0" max="1" step="0.05" bind:value={minThreshold} />
+    <input type="range" min="0" max="1" {step} bind:value={minThreshold} />
     <button
       class="btn"
-      onclick={() => (minThreshold = Math.min(1, minThreshold + 0.05))}
+      onclick={() =>
+        (minThreshold = roundStep(Math.min(1, minThreshold + step)))}
     >
       +
     </button>
-    <span>MIN: {minThreshold}</span>
+    <span>MIN: {minThreshold.toFixed(2)}</span>
   </div>
   <div>
     <button
       class="btn"
-      onclick={() => (maxThreshold = Math.max(0, maxThreshold - 0.05))}
+      onclick={() =>
+        (maxThreshold = roundStep(Math.max(0, maxThreshold - step)))}
     >
       -
     </button>
-    <input type="range" min="0" max="1" step="0.05" bind:value={maxThreshold} />
+    <input type="range" min="0" max="1" {step} bind:value={maxThreshold} />
     <button
       class="btn"
-      onclick={() => (maxThreshold = Math.min(1, maxThreshold + 0.05))}
+      onclick={() =>
+        (maxThreshold = roundStep(Math.min(1, maxThreshold + step)))}
     >
       +
     </button>
-    <span>MAX: {maxThreshold}</span>
+    <span>MAX: {maxThreshold.toFixed(2)}</span>
   </div>
   <div bind:this={networkEl} class="network"></div>
 {/if}

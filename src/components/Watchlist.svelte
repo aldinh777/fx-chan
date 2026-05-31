@@ -4,7 +4,6 @@
   import { save } from "../lib/storage";
   import { wl } from "../stores/watchlist.svelte";
   import "./Watchlist.css";
-  import RelationMatrix from "./RelationMatrix.svelte";
 
   $effect(() => {
     save("wlFxs", wl.fxs);
@@ -69,8 +68,6 @@
     />
     <button class="btn add-btn" onclick={handleAdd}>ADD ASSET</button>
   </div>
-
-  <RelationMatrix />
 
   <div class="card-grid">
     {#if wl.cryptos.length === 0}
