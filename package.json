@@ -19,8 +19,10 @@
     "vite": "^8.0.10"
   },
   "dependencies": {
+    "echarts": "^6.1.0",
     "lightweight-charts": "^5.2.0",
     "lucide-svelte": "^1.0.1",
+    "ml-hclust": "^4.0.0",
     "vis-network": "^10.1.0"
   }
 }

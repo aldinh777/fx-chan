@@ -2,6 +2,8 @@
   import { Network } from "vis-network/standalone";
   import { DataSet } from "vis-data";
 
+  import { agnes } from "ml-hclust";
+
   let networkEl: HTMLDivElement | undefined = $state();
 
   let minThreshold = $state(0.6);
@@ -97,12 +99,9 @@
 
   function initNetwork() {
     if (!networkEl) return;
-
     network?.destroy();
-
     nodes = new DataSet(buildNodes());
     edges = new DataSet(buildEdges());
-
     network = new Network(
       networkEl,
       {
@@ -111,7 +110,6 @@
       },
       options,
     );
-
     network.on("hoverNode", ({ node }) => {
       if (!network || !nodes || !edges) return;
       const connectedNodes = new Set([
@@ -153,9 +151,90 @@
     });
   }
 
+  function attachLabels(node: any, symbols: string[]) {
+    if (node.index !== undefined) {
+      node.label = symbols[node.index];
+    }
+    if (node.children) {
+      node.children.forEach((c: any) => attachLabels(c, symbols));
+    }
+    return node;
+  }
+
+  function toEChartsTree(node: any, symbols: string[]) {
+    const name =
+      node.label ??
+      (node.index !== undefined ? symbols[node.index] : "cluster");
+    if (!node.children || node.children.length === 0) {
+      return { name };
+    }
+    return {
+      name,
+      children: node.children.map((c: any) => toEChartsTree(c, symbols)),
+    };
+  }
+
+  let dendroEl: HTMLDivElement | undefined = $state();
+
+  import * as echarts from "echarts";
+
+  function renderTree(dom: HTMLDivElement, data: any) {
+    const chart = echarts.init(dom);
+    const option = {
+      tooltip: {
+        trigger: "item",
+        triggerOn: "mousemove",
+      },
+      series: [
+        {
+          type: "tree",
+          data: [data],
+          top: "5%",
+          left: "5%",
+          bottom: "5%",
+          right: "5%",
+          symbol: "circle",
+          symbolSize: 6,
+          orient: "TB",
+          label: {
+            position: "radial",
+            formatter: (p: any) => p.data.name?.toUpperCase(),
+          },
+          leaves: {
+            label: {
+              position: "right",
+              align: "left",
+            },
+          },
+          initialTreeDepth: -1,
+          animationDuration: 300,
+          animationDurationUpdate: 300,
+        },
+      ],
+    };
+    chart.setOption(option);
+  }
+
+  function buildDendogram() {
+    if (!dendroEl) return;
+    const symbols = Object.keys(corelationMatrix);
+    const corrmx = symbols.map((i) =>
+      symbols.map((j) => corelationMatrix[i][j]),
+    );
+    const distmx = corrmx.map((r) => r.map((v) => Math.sqrt(2 * (1 - v))));
+    const tree = agnes(distmx, {
+      isDistanceMatrix: true,
+      method: "ward2",
+    });
+    const ltree = attachLabels(tree, symbols);
+    const etree = toEChartsTree(ltree, symbols);
+    renderTree(dendroEl, etree);
+  }
+
   $effect(() => {
     if (networkEl && Object.keys(corelationMatrix).length > 0 && !network) {
       initNetwork();
+      buildDendogram();
     }
   });
 
@@ -467,6 +546,7 @@
       </tbody>
     </table>
   </div>
+  <div bind:this={dendroEl} class="dendro"></div>
   <div class="factor-wrap">
     <table class="heatmap">
       <thead>
@@ -567,7 +647,12 @@
   }
   .network {
     width: 100%;
-    height: 600px;
+    height: 480px;
+    border: 1px solid #ddd;
+  }
+  .dendro {
+    width: 100%;
+    height: 480px;
     border: 1px solid #ddd;
   }
 </style>
