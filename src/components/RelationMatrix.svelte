@@ -491,21 +491,20 @@
   }
 </script>
 
-<TimeFrameBar />
-
-<div>
-  <button class="btn" onclick={() => (mode = "corelation")}>
-    corelation
-  </button>
-
-  <button class="btn" onclick={() => (mode = "beta")}> beta </button>
-
-  <button class="btn" onclick={() => (mode = "alpha")}> alpha </button>
-</div>
-
 {#if loading}
   <div class="loading">Computing matrix...</div>
 {:else}
+  <div bind:this={dendroEl} class="dendro"></div>
+  <TimeFrameBar />
+  <div>
+    <button class="btn" onclick={() => (mode = "corelation")}>
+      corelation
+    </button>
+
+    <button class="btn" onclick={() => (mode = "beta")}> beta </button>
+
+    <button class="btn" onclick={() => (mode = "alpha")}> alpha </button>
+  </div>
   <div class="heatmap-wrap">
     <table class="heatmap">
       <thead>
@@ -546,7 +545,6 @@
       </tbody>
     </table>
   </div>
-  <div bind:this={dendroEl} class="dendro"></div>
   <div class="factor-wrap">
     <table class="heatmap">
       <thead>

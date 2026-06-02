@@ -4,12 +4,23 @@
   margin-bottom: 20px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .nav-tabs {
   position: relative;
   display: flex;
   gap: 16px;
+  overflow-x: auto;
+  min-width: 0;
+  flex-shrink: 1;
+  scrollbar-width: none;
+  padding-bottom: 4px;
+}
+
+.nav-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-item {
@@ -21,6 +32,8 @@
   font-weight: 700;
   cursor: pointer;
   transition: color 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .nav-item:hover {
@@ -34,7 +47,7 @@
 .nav-indicator {
   position: absolute;
   left: 0;
-  bottom: -9px;
+  bottom: 0px;
   height: 2px;
   background: var(--accent);
   border-radius: 999px;
@@ -47,4 +60,12 @@
   margin-left: auto;
   color: var(--muted);
   font-size: 0.9rem;
+  padding-left: 16px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .version {
+    display: none;
+  }
 }
