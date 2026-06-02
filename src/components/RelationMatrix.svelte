@@ -2,7 +2,7 @@
   import { Network } from "vis-network/standalone";
   import { DataSet } from "vis-data";
 
-  import { agnes } from "ml-hclust";
+  import { agnes, type AgglomerationMethod } from "ml-hclust";
 
   let networkEl: HTMLDivElement | undefined = $state();
 
@@ -14,7 +14,8 @@
   let edges: DataSet<any> | null = null;
 
   const step = 0.02;
-  const roundStep = (v: number) => Math.round(v * 50) / 50;
+  const hopstep = 1 / step;
+  const roundStep = (v: number) => Math.round(v * hopstep) / hopstep;
 
   function buildNodes() {
     return Object.keys(corelationMatrix).map((coin) => ({
@@ -153,7 +154,10 @@
 
   function attachLabels(node: any, symbols: string[]) {
     if (node.index !== undefined) {
-      node.label = symbols[node.index];
+      const label = symbols[node.index];
+      if (label) {
+        node.label = trimSymbolPrefix(label);
+      }
     }
     if (node.children) {
       node.children.forEach((c: any) => attachLabels(c, symbols));
@@ -161,16 +165,34 @@
     return node;
   }
 
-  function toEChartsTree(node: any, symbols: string[]) {
+  function getLeaves(node: any, symbols: string[]): any[] {
+    if (!node.children || node.children.length === 0) {
+      const name =
+        node.label ??
+        (node.index !== undefined ? symbols[node.index] : "cluster");
+      return [{ name }];
+    }
+    return node.children.flatMap((c: any) => getLeaves(c, symbols));
+  }
+
+  function toEChartsTree(node: any, symbols: string[], distThreshold: number) {
     const name =
       node.label ??
       (node.index !== undefined ? symbols[node.index] : "cluster");
     if (!node.children || node.children.length === 0) {
       return { name };
     }
+    if (node.height !== undefined && node.height <= distThreshold) {
+      return {
+        name,
+        children: getLeaves(node, symbols),
+      };
+    }
     return {
       name,
-      children: node.children.map((c: any) => toEChartsTree(c, symbols)),
+      children: node.children.map((c: any) =>
+        toEChartsTree(c, symbols, distThreshold),
+      ),
     };
   }
 
@@ -215,6 +237,22 @@
     chart.setOption(option);
   }
 
+  let corrThreshold = $state(0.8);
+  const methods: AgglomerationMethod[] = [
+    "single",
+    "complete",
+    "average",
+    "upgma",
+    "wpgma",
+    "median",
+    "wpgmc",
+    "centroid",
+    "upgmc",
+    "ward",
+    "ward2",
+  ];
+  let agnesMethod: AgglomerationMethod = $state("ward2");
+
   function buildDendogram() {
     if (!dendroEl) return;
     const symbols = Object.keys(corelationMatrix);
@@ -224,16 +262,19 @@
     const distmx = corrmx.map((r) => r.map((v) => Math.sqrt(2 * (1 - v))));
     const tree = agnes(distmx, {
       isDistanceMatrix: true,
-      method: "ward",
+      method: agnesMethod,
     });
     const ltree = attachLabels(tree, symbols);
-    const etree = toEChartsTree(ltree, symbols);
+    const distThreshold = Math.sqrt(2 * (1 - corrThreshold));
+    const etree = toEChartsTree(ltree, symbols, distThreshold);
     renderTree(dendroEl, etree);
   }
 
   $effect(() => {
-    if (networkEl && Object.keys(corelationMatrix).length > 0 && !network) {
-      initNetwork();
+    if (networkEl && Object.keys(corelationMatrix).length > 0) {
+      if (!network) {
+        initNetwork();
+      }
       buildDendogram();
     }
   });
@@ -494,6 +535,34 @@
 {#if loading}
   <div class="loading">Computing matrix...</div>
 {:else}
+  <div>
+    <button
+      class="btn"
+      onclick={() =>
+        (corrThreshold = roundStep(Math.max(0, corrThreshold - step * 2)))}
+    >
+      -
+    </button>
+    <input type="range" min="0" max="1" {step} bind:value={corrThreshold} />
+    <button
+      class="btn"
+      onclick={() =>
+        (corrThreshold = roundStep(Math.min(1, corrThreshold + step * 2)))}
+    >
+      +
+    </button>
+    <span>CORELATION: {corrThreshold.toFixed(2)}</span>
+  </div>
+  <div>
+    METHOD
+    <div class="controls">
+      <select id="agnes-method" bind:value={agnesMethod}>
+        {#each methods as method}
+          <option value={method}>{method.toUpperCase()}</option>
+        {/each}
+      </select>
+    </div>
+  </div>
   <div bind:this={dendroEl} class="dendro"></div>
   <TimeFrameBar />
   <div>
