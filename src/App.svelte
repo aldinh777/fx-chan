@@ -4,6 +4,7 @@
   import CryptoMarkets from "./components/CryptoMarkets.svelte";
   import Navbar from "./components/Navbar.svelte";
   import Watchlist from "./components/Watchlist.svelte";
+  import Transaction from "./components/Transaction.svelte";
 
   import { ensureVersionUpdate } from "./lib/version-util";
 
@@ -33,6 +34,8 @@
     <TradingView />
   {:else if app.activeTab === "relation"}
     <RelationMatrix />
+  {:else if app.activeTab === "transaction"}
+    <Transaction />
   {:else if app.activeTab === "watchlist"}
     <Watchlist />
   {/if}

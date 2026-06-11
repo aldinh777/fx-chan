@@ -8,6 +8,7 @@
     { id: "dashboard", label: "MARKET" },
     { id: "metrics", label: "METRICS" },
     { id: "relation", label: "CORELATION" },
+    { id: "transaction", label: "TRANSACTION" },
     { id: "watchlist", label: "WATCHLIST" },
   ];
 
