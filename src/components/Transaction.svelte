@@ -1,117 +1,128 @@
 <script lang="ts">
-  type BaseTransaction = {
-    type: "deposit" | "withdraw";
+  import { onMount } from "svelte";
+  import { wl } from "../stores/watchlist.svelte";
+  import "./Transaction.css";
+  import {
+    loadTransactionData,
+    normalizeTransactionData,
+    readTransactionJson,
+    saveTransactionData,
+    serializeTransactionJson,
+    type BaseTransaction,
+    type SwapTransaction,
+    type TransactionData,
+  } from "../lib/transaction-data";
+
+  type TransferForm = {
+    type: BaseTransaction["type"];
     coin: string;
-    amount: number;
-    price: number;
+    amount: string;
+    price: string;
+    date: string;
     time: string;
-    fee: number;
+    fee: string;
     vault: string;
     note: string;
   };
 
-  type SwapTransaction = {
-    from: { coin: string; amount: number; vault: string };
-    to: { coin: string; amount: number; vault: string };
-    rate: number;
+  type SwapForm = {
+    fromCoin: string;
+    fromAmount: string;
+    fromVault: string;
+    toCoin: string;
+    toAmount: string;
+    toVault: string;
+    rate: string;
+    date: string;
     time: string;
     protocol: string;
-    gas: { coin: string; amount: number; vault: string };
-    fee: number;
-    cut: number;
+    gasCoin: string;
+    gasAmount: string;
+    gasVault: string;
+    fee: string;
+    cut: string;
     note: string;
   };
 
-  let transfers = $state<BaseTransaction[]>([
-    {
-      type: "deposit",
-      coin: "USDC",
-      amount: 12500,
-      price: 1,
-      time: "2026-06-11 09:12",
-      fee: 0,
-      vault: "Main vault",
-      note: "Funding transfer from treasury wallet.",
-    },
-    {
-      type: "withdraw",
-      coin: "BTC",
-      amount: 0.08,
-      price: 67420.1,
-      time: "2026-06-11 10:03",
-      fee: 0.0002,
-      vault: "Cold vault",
-      note: "Rebalancing out to offline storage.",
-    },
-    {
-      type: "deposit",
-      coin: "ETH",
-      amount: 4.5,
-      price: 3412.88,
-      time: "2026-06-11 10:41",
-      fee: 0.003,
-      vault: "Yield vault",
-      note: "Incoming settlement from strategy account.",
-    },
-  ]);
+  type EditingEntry =
+    | { kind: "transfer"; index: number }
+    | { kind: "swap"; index: number };
 
-  let swaps = $state<SwapTransaction[]>([
-    {
-      from: { coin: "USDC", amount: 7500, vault: "Main vault" },
-      to: { coin: "SOL", amount: 50.5856, vault: "Growth vault" },
-      rate: 148.25,
-      time: "2026-06-11 11:08",
-      protocol: "Jupiter",
-      gas: { coin: "SOL", amount: 0.0021, vault: "Growth vault" },
-      fee: 12.5,
-      cut: 4.2,
-      note: "Converted idle stable balance into higher beta exposure.",
-    },
-    {
-      from: { coin: "ETH", amount: 2.4, vault: "Yield vault" },
-      to: { coin: "USDC", amount: 8190.91, vault: "Main vault" },
-      rate: 3412.88,
-      time: "2026-06-11 12:19",
-      protocol: "Uniswap",
-      gas: { coin: "ETH", amount: 0.0048, vault: "Yield vault" },
-      fee: 18.75,
-      cut: 7.5,
-      note: "Reduced ETH exposure after local rally.",
-    },
-  ]);
+  const splitDateTime = (value: string) => {
+    const [date = "", time = ""] = value.split(" ");
+
+    return { date, time };
+  };
+
+  const combineDateTime = (date: string, time: string) => {
+    if (!date && !time) {
+      return "";
+    }
+
+    return `${date} ${time}`.trim();
+  };
+
+  let entryFormOpen = $state(false);
+
+  const createTransferForm = (transaction?: BaseTransaction): TransferForm => {
+    entryFormOpen = false;
+    const dateTime = splitDateTime(transaction?.time ?? "");
+
+    return {
+      type: transaction?.type ?? "deposit",
+      coin: transaction?.coin ?? "",
+      amount: transaction ? String(transaction.amount) : "",
+      price: transaction ? String(transaction.price) : "",
+      date: dateTime.date,
+      time: dateTime.time,
+      fee: transaction ? String(transaction.fee) : "",
+      vault: transaction?.vault ?? "",
+      note: transaction?.note ?? "",
+    };
+  };
+
+  const createSwapForm = (swap?: SwapTransaction): SwapForm => {
+    entryFormOpen = false;
+    const dateTime = splitDateTime(swap?.time ?? "");
+
+    return {
+      fromCoin: swap?.from.coin ?? "",
+      fromAmount: swap ? String(swap.from.amount) : "",
+      fromVault: swap?.from.vault ?? "",
+      toCoin: swap?.to.coin ?? "",
+      toAmount: swap ? String(swap.to.amount) : "",
+      toVault: swap?.to.vault ?? "",
+      rate: swap ? String(swap.rate) : "",
+      date: dateTime.date,
+      time: dateTime.time,
+      protocol: swap?.protocol ?? "",
+      gasCoin: swap?.gas.coin ?? "",
+      gasAmount: swap ? String(swap.gas.amount) : "",
+      gasVault: swap?.gas.vault ?? "",
+      fee: swap ? String(swap.fee) : "",
+      cut: swap ? String(swap.cut) : "",
+      note: swap?.note ?? "",
+    };
+  };
+
+  const coinOptions = $derived(
+    [...new Set([...wl.cryptos.map((crypto) => crypto.symbol.toUpperCase()), "USDC", "USDT"])],
+  );
+
+  let transfers = $state<BaseTransaction[]>([]);
+
+  let swaps = $state<SwapTransaction[]>([]);
 
   let entryMode = $state<"transfer" | "swap">("transfer");
 
-  let transferForm = $state({
-    type: "deposit" as BaseTransaction["type"],
-    coin: "USDC",
-    amount: 0,
-    price: 1,
-    time: "2026-06-11 13:00",
-    fee: 0,
-    vault: "Main vault",
-    note: "",
-  });
+  let transferForm = $state<TransferForm>(createTransferForm());
 
-  let swapForm = $state({
-    fromCoin: "USDC",
-    fromAmount: 0,
-    fromVault: "Main vault",
-    toCoin: "BTC",
-    toAmount: 0,
-    toVault: "Cold vault",
-    rate: 0,
-    time: "2026-06-11 13:00",
-    protocol: "Jupiter",
-    gasCoin: "SOL",
-    gasAmount: 0,
-    gasVault: "Main vault",
-    fee: 0,
-    cut: 0,
-    note: "",
-  });
+  let swapForm = $state<SwapForm>(createSwapForm());
 
-  let entryFormOpen = $state(false);
+  let editingEntry = $state<EditingEntry | null>(null);
+  let transactionsLoaded = $state(false);
+  let importInput: HTMLInputElement | null = null;
+  let persistMessage = $state("Loading saved transactions...");
 
   const summary = $derived({
     deposits: transfers.filter((transaction) => transaction.type === "deposit")
@@ -121,70 +132,191 @@
     swaps: swaps.length,
   });
 
-  function addTransfer() {
-    transfers = [
-      ...transfers,
-      {
-        ...transferForm,
-        amount: Number(transferForm.amount),
-        price: Number(transferForm.price),
-        fee: Number(transferForm.fee),
-        note: transferForm.note.trim() || "Manual transfer entry.",
-      },
-    ];
-
-    transferForm = {
-      ...transferForm,
-      amount: 0,
-      price: 1,
-      fee: 0,
-      note: "",
-    };
+  function setEntryMode(mode: "transfer" | "swap") {
+    entryMode = mode;
+    editingEntry = null;
   }
 
-  function addSwap() {
-    swaps = [
-      ...swaps,
-      {
-        from: {
-          coin: swapForm.fromCoin,
-          amount: Number(swapForm.fromAmount),
-          vault: swapForm.fromVault,
-        },
-        to: {
-          coin: swapForm.toCoin,
-          amount: Number(swapForm.toAmount),
-          vault: swapForm.toVault,
-        },
-        rate: Number(swapForm.rate),
-        time: swapForm.time,
-        protocol: swapForm.protocol,
-        gas: {
-          coin: swapForm.gasCoin,
-          amount: Number(swapForm.gasAmount),
-          vault: swapForm.gasVault,
-        },
-        fee: Number(swapForm.fee),
-        cut: Number(swapForm.cut),
-        note: swapForm.note.trim() || "Manual swap entry.",
-      },
-    ];
+  function resetTransferForm() {
+    transferForm = createTransferForm();
+  }
 
-    swapForm = {
-      ...swapForm,
-      fromAmount: 0,
-      toAmount: 0,
-      rate: 0,
-      gasAmount: 0,
-      fee: 0,
-      cut: 0,
-      note: "",
+  function resetSwapForm() {
+    swapForm = createSwapForm();
+  }
+
+  function snapshotTransactions(): TransactionData {
+    return normalizeTransactionData({ transfers, swaps });
+  }
+
+  function submitTransfer() {
+    const payload: BaseTransaction = {
+      type: transferForm.type,
+      coin: transferForm.coin.trim(),
+      amount: Number(transferForm.amount || 0),
+      price: Number(transferForm.price || 0),
+      time: combineDateTime(transferForm.date, transferForm.time),
+      fee: Number(transferForm.fee || 0),
+      vault: transferForm.vault.trim(),
+      note: transferForm.note.trim() || "Manual transfer entry.",
     };
+
+    const editIndex = editingEntry?.kind === "transfer" ? editingEntry.index : null;
+
+    if (editIndex !== null) {
+      transfers = transfers.map((transaction, index) =>
+        index === editIndex ? payload : transaction,
+      );
+    } else {
+      transfers = [...transfers, payload];
+    }
+
+    editingEntry = null;
+    resetTransferForm();
+  }
+
+  function submitSwap() {
+    const payload: SwapTransaction = {
+      from: {
+        coin: swapForm.fromCoin.trim(),
+        amount: Number(swapForm.fromAmount || 0),
+        vault: swapForm.fromVault.trim(),
+      },
+      to: {
+        coin: swapForm.toCoin.trim(),
+        amount: Number(swapForm.toAmount || 0),
+        vault: swapForm.toVault.trim(),
+      },
+      rate: Number(swapForm.rate || 0),
+      time: combineDateTime(swapForm.date, swapForm.time),
+      protocol: swapForm.protocol.trim(),
+      gas: {
+        coin: swapForm.gasCoin.trim(),
+        amount: Number(swapForm.gasAmount || 0),
+        vault: swapForm.gasVault.trim(),
+      },
+      fee: Number(swapForm.fee || 0),
+      cut: Number(swapForm.cut || 0),
+      note: swapForm.note.trim() || "Manual swap entry.",
+    };
+
+    const editIndex = editingEntry?.kind === "swap" ? editingEntry.index : null;
+
+    if (editIndex !== null) {
+      swaps = swaps.map((swap, index) => (index === editIndex ? payload : swap));
+    } else {
+      swaps = [...swaps, payload];
+    }
+
+    editingEntry = null;
+    resetSwapForm();
+  }
+
+  function startTransferEdit(index: number) {
+    entryMode = "transfer";
+    entryFormOpen = true;
+    editingEntry = { kind: "transfer", index };
+    transferForm = createTransferForm(transfers[index]);
+  }
+
+  function startSwapEdit(index: number) {
+    entryMode = "swap";
+    entryFormOpen = true;
+    editingEntry = { kind: "swap", index };
+    swapForm = createSwapForm(swaps[index]);
+  }
+
+  function deleteTransfer(index: number) {
+    transfers = transfers.filter((_, currentIndex) => currentIndex !== index);
+
+    if (editingEntry?.kind === "transfer" && editingEntry.index === index) {
+      editingEntry = null;
+      resetTransferForm();
+    }
+  }
+
+  function deleteSwap(index: number) {
+    swaps = swaps.filter((_, currentIndex) => currentIndex !== index);
+
+    if (editingEntry?.kind === "swap" && editingEntry.index === index) {
+      editingEntry = null;
+      resetSwapForm();
+    }
+  }
+
+  function cancelEditing() {
+    editingEntry = null;
+    resetTransferForm();
+    resetSwapForm();
   }
 
   function toggleEntryForm() {
     entryFormOpen = !entryFormOpen;
   }
+
+  function closeEntryForm() {
+    entryFormOpen = false;
+    editingEntry = null;
+  }
+
+  function exportTransactions() {
+    const blob = new Blob([serializeTransactionJson(snapshotTransactions())], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+
+    anchor.href = url;
+    anchor.download = `fx-chan-transactions-${new Date().toISOString().slice(0, 10)}.json`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function handleImportFile(file: File) {
+    const imported = await readTransactionJson(file);
+
+    transfers = imported.transfers;
+    swaps = imported.swaps;
+    transactionsLoaded = true;
+    persistMessage = "Transactions imported.";
+    await saveTransactionData(snapshotTransactions());
+  }
+
+  async function handleImportChange(event: Event) {
+    const input = event.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      await handleImportFile(file);
+    } finally {
+      input.value = "";
+    }
+  }
+
+  function triggerImport() {
+    importInput?.click();
+  }
+
+  onMount(async () => {
+    const stored = await loadTransactionData();
+
+    transfers = stored.transfers;
+    swaps = stored.swaps;
+    transactionsLoaded = true;
+    persistMessage = transfers.length || swaps.length ? "Transactions loaded from device." : "No saved transactions found.";
+  });
+
+  $effect(() => {
+    if (!transactionsLoaded) {
+      return;
+    }
+
+    void saveTransactionData(snapshotTransactions());
+  });
 
   const formatNumber = (value: number, digits = 4) =>
     new Intl.NumberFormat("en-US", {
@@ -206,179 +338,304 @@
 </script>
 
 <div class="panel transaction-panel">
-  <div class="header transaction-header">
+  <input
+    bind:this={importInput}
+    class="file-input"
+    type="file"
+    accept="application/json,.json"
+    onchange={handleImportChange}
+  />
+
+  <div class="transaction-toolbar">
     <div>
       <div class="eyebrow">TRANSACTION LOG</div>
-      <h2>Deposits, withdrawals, and swaps</h2>
-      <p class="text-muted">
-        Dummy data shaped like the real transaction model. This page is ready to
-        be replaced with live vault and swap history later.
-      </p>
+      <h3>Deposits, withdrawals, and swaps</h3>
+      <p class="text-muted">{persistMessage}</p>
     </div>
 
-    <div class="summary-grid">
-      <div class="summary-card">
-        <span class="summary-label">DEPOSITS</span>
-        <strong>{summary.deposits}</strong>
-      </div>
-      <div class="summary-card">
-        <span class="summary-label">WITHDRAWS</span>
-        <strong>{summary.withdraws}</strong>
-      </div>
-      <div class="summary-card">
-        <span class="summary-label">SWAPS</span>
-        <strong>{summary.swaps}</strong>
-      </div>
+    <div class="transaction-actions">
+      <button class="btn" type="button" onclick={triggerImport}>Import JSON</button>
+      <button class="btn" type="button" onclick={exportTransactions}>Export JSON</button>
     </div>
   </div>
 
   <section class="section-block entry-block">
-    <div class="section-title-row">
-      <h3>Add Entry</h3>
-      <div class="entry-actions">
-        <span class="section-hint">{entryFormOpen ? "open" : "closed"}</span>
-        <button class="btn entry-toggle" type="button" onclick={toggleEntryForm}>
-          {entryFormOpen ? "Hide Form" : "Add Entry"}
-        </button>
-      </div>
-    </div>
-
-    {#if entryFormOpen}
-      <div class="mode-tabs">
-        <button class:active={entryMode === "transfer"} class="mode-btn" onclick={() => (entryMode = "transfer")}>
-          Transfer
-        </button>
-        <button class:active={entryMode === "swap"} class="mode-btn" onclick={() => (entryMode = "swap")}>
-          Swap
-        </button>
+      <div class="section-title-row">
+        <div class="entry-actions">
+          <button class="btn entry-toggle" type="button" onclick={toggleEntryForm}>
+            {entryFormOpen ? "Hide Form" : "Add Transaction"}
+          </button>
+        </div>
       </div>
 
-      {#if entryMode === "transfer"}
-        <form class="entry-form" onsubmit={(event) => {
-          event.preventDefault();
-          addTransfer();
+      {#if entryFormOpen}
+        <div class="modal-backdrop" role="presentation" tabindex="-1" onclick={(event) => {
+          if (event.target === event.currentTarget) {
+            closeEntryForm();
+          }
+        }} onkeydown={(event) => {
+          if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+            closeEntryForm();
+          }
         }}>
-          <div class="form-grid transfer-grid">
-            <label>
-              <span>Type</span>
-              <select bind:value={transferForm.type}>
-                <option value="deposit">Deposit</option>
-                <option value="withdraw">Withdraw</option>
-              </select>
-            </label>
-            <label>
-              <span>Coin</span>
-              <input bind:value={transferForm.coin} />
-            </label>
-            <label>
-              <span>Amount</span>
-              <input type="number" step="any" bind:value={transferForm.amount} />
-            </label>
-            <label>
-              <span>Price</span>
-              <input type="number" step="any" bind:value={transferForm.price} />
-            </label>
-            <label>
-              <span>Time</span>
-              <input bind:value={transferForm.time} placeholder="YYYY-MM-DD HH:MM" />
-            </label>
-            <label>
-              <span>Fee</span>
-              <input type="number" step="any" bind:value={transferForm.fee} />
-            </label>
-            <label>
-              <span>Vault</span>
-              <input bind:value={transferForm.vault} />
-            </label>
-            <label class="wide-field">
-              <span>Note</span>
-              <input bind:value={transferForm.note} placeholder="Optional note" />
-            </label>
-          </div>
+          <div class="modal-shell" role="dialog" aria-modal="true" aria-label="Transaction entry form" tabindex="0">
+            <div class="modal-header">
+              <div>
+                <div class="eyebrow">TRANSACTION ENTRY</div>
+                <h3>{editingEntry ? "Edit Entry" : "New Entry"}</h3>
+              </div>
+              <button class="btn modal-close" type="button" onclick={closeEntryForm}>
+                Close
+              </button>
+            </div>
 
-          <button class="btn form-submit" type="submit">Add Transfer</button>
-        </form>
-      {:else}
-        <form class="entry-form" onsubmit={(event) => {
-          event.preventDefault();
-          addSwap();
-        }}>
-          <div class="form-grid swap-form-grid">
-            <label>
-              <span>From coin</span>
-              <input bind:value={swapForm.fromCoin} />
-            </label>
-            <label>
-              <span>From amount</span>
-              <input type="number" step="any" bind:value={swapForm.fromAmount} />
-            </label>
-            <label>
-              <span>From vault</span>
-              <input bind:value={swapForm.fromVault} />
-            </label>
-            <label>
-              <span>To coin</span>
-              <input bind:value={swapForm.toCoin} />
-            </label>
-            <label>
-              <span>To amount</span>
-              <input type="number" step="any" bind:value={swapForm.toAmount} />
-            </label>
-            <label>
-              <span>To vault</span>
-              <input bind:value={swapForm.toVault} />
-            </label>
-            <label>
-              <span>Rate</span>
-              <input type="number" step="any" bind:value={swapForm.rate} />
-            </label>
-            <label>
-              <span>Time</span>
-              <input bind:value={swapForm.time} placeholder="YYYY-MM-DD HH:MM" />
-            </label>
-            <label>
-              <span>Protocol</span>
-              <input bind:value={swapForm.protocol} />
-            </label>
-            <label>
-              <span>Gas coin</span>
-              <input bind:value={swapForm.gasCoin} />
-            </label>
-            <label>
-              <span>Gas amount</span>
-              <input type="number" step="any" bind:value={swapForm.gasAmount} />
-            </label>
-            <label>
-              <span>Gas vault</span>
-              <input bind:value={swapForm.gasVault} />
-            </label>
-            <label>
-              <span>Fee</span>
-              <input type="number" step="any" bind:value={swapForm.fee} />
-            </label>
-            <label>
-              <span>Cut</span>
-              <input type="number" step="any" bind:value={swapForm.cut} />
-            </label>
-            <label class="wide-field">
-              <span>Note</span>
-              <input bind:value={swapForm.note} placeholder="Optional note" />
-            </label>
-          </div>
+            <div class="mode-tabs modal-tabs">
+              <button class:active={entryMode === "transfer"} class="mode-btn" onclick={() => setEntryMode("transfer")}>
+                Transfer
+              </button>
+              <button class:active={entryMode === "swap"} class="mode-btn" onclick={() => setEntryMode("swap")}>
+                Swap
+              </button>
+            </div>
 
-          <button class="btn form-submit" type="submit">Add Swap</button>
-        </form>
+            {#if entryMode === "transfer"}
+              <form class="entry-form modal-form" onsubmit={(event) => {
+                event.preventDefault();
+                submitTransfer();
+              }}>
+                <div class="form-heading-row">
+                  <span class="section-hint">
+                    {editingEntry?.kind === "transfer" ? "editing transfer" : "new transfer"}
+                  </span>
+                  {#if editingEntry?.kind === "transfer"}
+                    <button class="btn secondary-btn" type="button" onclick={cancelEditing}>
+                      Cancel Edit
+                    </button>
+                  {/if}
+                </div>
+                <div class="form-grid transfer-grid">
+                  <label>
+                    <span>Type</span>
+                    <select bind:value={transferForm.type}>
+                      <option value="deposit">Deposit</option>
+                      <option value="withdraw">Withdraw</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span>Coin</span>
+                    <select bind:value={transferForm.coin}>
+                      <option value="">Select coin</option>
+                      {#each coinOptions as coin}
+                        <option value={coin}>{coin}</option>
+                      {/each}
+                    </select>
+                  </label>
+                  <label>
+                    <span>Amount</span>
+                    <input type="number" step="any" bind:value={transferForm.amount} />
+                  </label>
+                  <label>
+                    <span>Price</span>
+                    <input type="number" step="any" bind:value={transferForm.price} />
+                  </label>
+                  <label>
+                    <span>Date</span>
+                    <input type="date" bind:value={transferForm.date} />
+                  </label>
+                  <label>
+                    <span>Time</span>
+                    <input type="time" step="60" bind:value={transferForm.time} />
+                  </label>
+                  <label>
+                    <span>Fee</span>
+                    <input type="number" step="any" bind:value={transferForm.fee} />
+                  </label>
+                  <label>
+                    <span>Vault</span>
+                    <input bind:value={transferForm.vault} />
+                  </label>
+                  <label class="wide-field">
+                    <span>Note</span>
+                    <input bind:value={transferForm.note} placeholder="Optional note" />
+                  </label>
+                </div>
+
+                <button class="btn form-submit" type="submit">
+                  {editingEntry?.kind === "transfer" ? "Save" : "Add Transaction"}
+                </button>
+              </form>
+            {:else}
+              <form class="entry-form modal-form" onsubmit={(event) => {
+                event.preventDefault();
+                submitSwap();
+              }}>
+                <div class="form-heading-row">
+                  <span class="section-hint">
+                    {editingEntry?.kind === "swap" ? "editing swap" : "new swap"}
+                  </span>
+                  {#if editingEntry?.kind === "swap"}
+                    <button class="btn secondary-btn" type="button" onclick={cancelEditing}>
+                      Cancel Edit
+                    </button>
+                  {/if}
+                </div>
+
+                <div class="swap-form-layout">
+                  <section class="swap-group swap-general-group">
+                    <div class="swap-group-header">
+                      <div>
+                        <span class="swap-group-kicker">GENERAL</span>
+                        <h4>Swap transaction data</h4>
+                      </div>
+                      <p class="swap-group-copy">Date, time, protocol, rate, fee, cut, and note.</p>
+                    </div>
+
+                    <div class="form-grid swap-general-grid">
+                      <label>
+                        <span>Protocol</span>
+                        <input bind:value={swapForm.protocol} />
+                      </label>
+                      <label>
+                        <span>Date</span>
+                        <input type="date" bind:value={swapForm.date} />
+                      </label>
+                      <label>
+                        <span>Time</span>
+                        <input type="time" step="60" bind:value={swapForm.time} />
+                      </label>
+                      <label>
+                        <span>Rate</span>
+                        <input type="number" step="any" bind:value={swapForm.rate} />
+                      </label>
+                      <label>
+                        <span>Fee</span>
+                        <input type="number" step="any" bind:value={swapForm.fee} />
+                      </label>
+                      <label>
+                        <span>Cut</span>
+                        <input type="number" step="any" bind:value={swapForm.cut} />
+                      </label>
+                      <label class="wide-field">
+                        <span>Note</span>
+                        <input bind:value={swapForm.note} placeholder="Optional note" />
+                      </label>
+                    </div>
+                  </section>
+
+                  <div class="swap-legs">
+                    <section class="swap-group swap-leg-card">
+                      <div class="swap-group-header">
+                        <div>
+                          <span class="swap-group-kicker">FROM</span>
+                          <h4>Source asset</h4>
+                        </div>
+                        <p class="swap-group-copy">What leaves the wallet or vault.</p>
+                      </div>
+
+                      <div class="form-grid swap-leg-grid">
+                        <label>
+                          <span>From coin</span>
+                          <select bind:value={swapForm.fromCoin}>
+                            <option value="">Select coin</option>
+                            {#each coinOptions as coin}
+                              <option value={coin}>{coin}</option>
+                            {/each}
+                          </select>
+                        </label>
+                        <label>
+                          <span>From amount</span>
+                          <input type="number" step="any" bind:value={swapForm.fromAmount} />
+                        </label>
+                        <label>
+                          <span>From vault</span>
+                          <input bind:value={swapForm.fromVault} />
+                        </label>
+                      </div>
+                    </section>
+
+                    <section class="swap-group swap-leg-card">
+                      <div class="swap-group-header">
+                        <div>
+                          <span class="swap-group-kicker">TO</span>
+                          <h4>Destination asset</h4>
+                        </div>
+                        <p class="swap-group-copy">What enters the wallet or vault.</p>
+                      </div>
+
+                      <div class="form-grid swap-leg-grid">
+                        <label>
+                          <span>To coin</span>
+                          <select bind:value={swapForm.toCoin}>
+                            <option value="">Select coin</option>
+                            {#each coinOptions as coin}
+                              <option value={coin}>{coin}</option>
+                            {/each}
+                          </select>
+                        </label>
+                        <label>
+                          <span>To amount</span>
+                          <input type="number" step="any" bind:value={swapForm.toAmount} />
+                        </label>
+                        <label>
+                          <span>To vault</span>
+                          <input bind:value={swapForm.toVault} />
+                        </label>
+                      </div>
+                    </section>
+
+                    <section class="swap-group swap-gas-card">
+                      <div class="swap-group-header">
+                        <div>
+                          <span class="swap-group-kicker">GAS COIN</span>
+                          <h4>Execution cost</h4>
+                        </div>
+                        <p class="swap-group-copy">Gas currency, amount, and destination vault.</p>
+                      </div>
+
+                      <div class="form-grid swap-leg-grid">
+                        <label>
+                          <span>Gas coin</span>
+                          <select bind:value={swapForm.gasCoin}>
+                            <option value="">Select coin</option>
+                            {#each coinOptions as coin}
+                              <option value={coin}>{coin}</option>
+                            {/each}
+                          </select>
+                        </label>
+                        <label>
+                          <span>Gas amount</span>
+                          <input type="number" step="any" bind:value={swapForm.gasAmount} />
+                        </label>
+                        <label>
+                          <span>Gas vault</span>
+                          <input bind:value={swapForm.gasVault} />
+                        </label>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+
+                <button class="btn form-submit" type="submit">
+                  {editingEntry?.kind === "swap" ? "Save" : "Add Transaction"}
+                </button>
+              </form>
+            {/if}
+          </div>
+        </div>
       {/if}
-    {/if}
   </section>
 
   <section class="section-block">
     <div class="section-title-row">
       <h3>Transfers</h3>
-      <span class="section-hint">type, coin, amount, price, time, fee, vault, note</span>
+      <span class="section-hint">type, coin, amount, price, date, time, fee, vault, note, actions</span>
     </div>
 
-    <div class="table-wrap">
+    {#if transfers.length === 0}
+      <div class="empty-state">No transfers saved yet.</div>
+    {/if}
+
+    <div class="table-wrap" class:empty-table={transfers.length === 0}>
       <table class="table transaction-table">
         <thead>
           <tr>
@@ -386,14 +643,16 @@
             <th>COIN</th>
             <th>AMOUNT</th>
             <th>PRICE</th>
+            <th>DATE</th>
             <th>TIME</th>
             <th>FEE</th>
             <th>VAULT</th>
             <th>NOTE</th>
+            <th>ACTIONS</th>
           </tr>
         </thead>
         <tbody>
-          {#each transfers as transaction}
+          {#each transfers as transaction, index}
             <tr>
               <td>
                 <span class:deposit={transaction.type === "deposit"} class:withdraw={transaction.type === "withdraw"} class="pill">
@@ -403,10 +662,21 @@
               <td>{transaction.coin}</td>
               <td>{formatNumber(transaction.amount)}</td>
               <td>${formatNumber(transaction.price, 2)}</td>
-              <td class="text-muted">{transaction.time}</td>
+              <td class="text-muted">{splitDateTime(transaction.time).date}</td>
+              <td class="text-muted">{splitDateTime(transaction.time).time}</td>
               <td>{formatNumber(transaction.fee, 6)}</td>
               <td>{transaction.vault}</td>
               <td class="note-cell">{transaction.note}</td>
+              <td>
+                <div class="row-actions">
+                  <button class="table-action-btn" type="button" onclick={() => startTransferEdit(index)}>
+                    Edit
+                  </button>
+                  <button class="table-action-btn danger-action" type="button" onclick={() => deleteTransfer(index)}>
+                    Delete
+                  </button>
+                </div>
+              </td>
             </tr>
           {/each}
         </tbody>
@@ -417,12 +687,24 @@
   <section class="section-block">
     <div class="section-title-row">
       <h3>Swaps</h3>
-      <span class="section-hint">from, to, rate, time, protocol, gas, fee, cut, note</span>
+      <span class="section-hint">from, to, rate, date, time, protocol, gas, fee, cut, note, actions</span>
     </div>
 
-    <div class="swap-list">
-      {#each swaps as swap}
+    {#if swaps.length === 0}
+      <div class="empty-state">No swaps saved yet.</div>
+    {/if}
+
+    <div class="swap-list" class:empty-table={swaps.length === 0}>
+      {#each swaps as swap, index}
         <article class="swap-card">
+          <div class="swap-card-actions">
+            <button class="table-action-btn" type="button" onclick={() => startSwapEdit(index)}>
+              Edit
+            </button>
+            <button class="table-action-btn danger-action" type="button" onclick={() => deleteSwap(index)}>
+              Delete
+            </button>
+          </div>
           <div class="swap-topline">
             <div>
               <div class="swap-label">FROM</div>
@@ -445,7 +727,8 @@
 
           <div class="swap-grid">
             <div><span>RATE</span><strong>{formatNumber(swap.rate, 2)}</strong></div>
-            <div><span>TIME</span><strong>{swap.time}</strong></div>
+            <div><span>DATE</span><strong>{splitDateTime(swap.time).date}</strong></div>
+            <div><span>TIME</span><strong>{splitDateTime(swap.time).time}</strong></div>
             <div><span>PROTOCOL</span><strong>{swap.protocol}</strong></div>
             <div>
               <span>GAS</span>
@@ -464,325 +747,3 @@
     </div>
   </section>
 </div>
-
-<style>
-  .transaction-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-  }
-
-  .transaction-header {
-    gap: 16px;
-    align-items: flex-start;
-  }
-
-  .eyebrow {
-    color: var(--accent);
-    font-size: 11px;
-    letter-spacing: 0.18em;
-    margin-bottom: 8px;
-  }
-
-  h2,
-  h3 {
-    margin: 0;
-  }
-
-  h2 {
-    font-size: 22px;
-    margin-bottom: 6px;
-  }
-
-  h3 {
-    font-size: 16px;
-  }
-
-  p {
-    margin: 0;
-    max-width: 68ch;
-    line-height: 1.5;
-  }
-
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(90px, 1fr));
-    gap: 10px;
-    min-width: min(100%, 300px);
-  }
-
-  .summary-card {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .summary-label {
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 0.12em;
-  }
-
-  .summary-card strong {
-    font-size: 20px;
-  }
-
-  .section-block {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .entry-block {
-    gap: 12px;
-  }
-
-  .entry-actions {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .section-title-row {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-
-  .section-hint {
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .table-wrap {
-    overflow-x: auto;
-  }
-
-  .mode-tabs {
-    display: inline-flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .entry-toggle {
-    min-height: 32px;
-    padding: 6px 12px;
-    border-radius: 999px;
-  }
-
-  .mode-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 8px 12px;
-    border-radius: 999px;
-    cursor: pointer;
-    font: inherit;
-  }
-
-  .mode-btn.active {
-    color: var(--text);
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px rgba(31, 199, 212, 0.15) inset;
-  }
-
-  .entry-form {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 12px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.02);
-  }
-
-  .form-grid {
-    display: grid;
-    gap: 10px;
-  }
-
-  .transfer-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .swap-form-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
-
-  label span {
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  input,
-  select {
-    background: #07181d;
-    border: 1px solid var(--border);
-    color: var(--text);
-    border-radius: 8px;
-    padding: 9px 10px;
-    font: inherit;
-  }
-
-  .wide-field {
-    grid-column: 1 / -1;
-  }
-
-  .form-submit {
-    align-self: flex-start;
-  }
-
-  .transaction-table {
-    min-width: 980px;
-  }
-
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 76px;
-    padding: 4px 10px;
-    border-radius: 999px;
-    border: 1px solid var(--border);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .deposit {
-    color: var(--green);
-    background: rgba(0, 209, 178, 0.08);
-  }
-
-  .withdraw {
-    color: var(--red);
-    background: rgba(255, 92, 92, 0.08);
-  }
-
-  .note-cell {
-    max-width: 260px;
-    white-space: normal;
-  }
-
-  .swap-list {
-    display: grid;
-    gap: 12px;
-  }
-
-  .swap-card {
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 14px;
-    background: rgba(255, 255, 255, 0.02);
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-  }
-
-  .swap-topline {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 12px;
-    align-items: center;
-  }
-
-  .swap-arrow {
-    font-size: 24px;
-    line-height: 1;
-    padding: 0 6px;
-  }
-
-  .buy-arrow {
-    color: var(--green);
-  }
-
-  .sell-arrow {
-    color: var(--red);
-  }
-
-  .neutral-arrow {
-    color: var(--yellow);
-  }
-
-  .swap-label,
-  .swap-meta,
-  .swap-grid span {
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .swap-grid {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .swap-grid > div {
-    background: rgba(6, 18, 23, 0.45);
-    border: 1px solid rgba(34, 58, 74, 0.8);
-    border-radius: 8px;
-    padding: 10px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-
-  .swap-grid strong {
-    font-size: 13px;
-    font-weight: 600;
-  }
-
-  .swap-note {
-    color: var(--text);
-    line-height: 1.55;
-  }
-
-  @media (max-width: 760px) {
-    .transaction-header {
-      flex-direction: column;
-    }
-
-    .summary-grid {
-      width: 100%;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .swap-topline {
-      grid-template-columns: 1fr;
-    }
-
-    .swap-arrow {
-      justify-self: start;
-      transform: rotate(90deg);
-      padding: 0;
-    }
-
-    .swap-grid {
-      grid-template-columns: 1fr;
-    }
-
-    .transfer-grid,
-    .swap-form-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
