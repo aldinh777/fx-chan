@@ -195,6 +195,34 @@ p {
   width: fit-content;
 }
 
+.utility-panel {
+  border: 1px solid rgba(80, 119, 136, 0.35);
+  border-radius: 14px;
+  background: rgba(6, 18, 23, 0.62);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.utility-panel p {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.utility-kicker {
+  color: var(--accent);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  margin-bottom: 3px;
+}
+
+.standalone-calculator {
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 1fr);
+}
+
 .mode-btn {
   background: transparent;
   border: 1px solid var(--border);
@@ -276,6 +304,34 @@ p {
 
 .swap-leg-card {
   background: rgba(7, 24, 29, 0.68);
+}
+
+.calculator-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 240px;
+  gap: 10px;
+  align-items: end;
+}
+
+.calculator-input,
+.calculator-result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calculator-result {
+  min-height: 100%;
+  border: 1px solid rgba(80, 119, 136, 0.35);
+  border-radius: 12px;
+  background: rgba(6, 18, 23, 0.62);
+  padding: 10px 12px;
+}
+
+.calculator-result strong {
+  font-size: 18px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
 }
 
 .swap-gas-card {
@@ -395,20 +451,105 @@ select {
   justify-content: flex-end;
 }
 
-.table-action-btn {
-  border: 1px solid var(--border);
-  border-radius: 999px;
+.icon-btn {
+  width: 34px;
+  height: 34px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border: none;
+  border-radius: 8px;
+
   background: transparent;
-  color: var(--text);
-  padding: 6px 10px;
-  font: inherit;
+  color: var(--muted);
+
   cursor: pointer;
-  min-height: 32px;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    transform 0.12s ease;
 }
 
-.danger-action {
-  color: var(--red);
-  border-color: rgba(255, 92, 92, 0.35);
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: white;
+}
+
+.icon-btn:active {
+  transform: scale(0.95);
+}
+
+.icon-btn.danger {
+  color: #ff6b6b;
+}
+
+.icon-btn.danger:hover {
+  background: rgba(255, 80, 80, 0.08);
+  color: #ff8080;
+}
+
+.transaction-table td {
+  vertical-align: top;
+}
+
+.transaction-table td strong {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.swap-cell-meta {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.view-shell {
+  width: min(900px, 100%);
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.detail-grid > div,
+.detail-note {
+  background: rgba(6, 18, 23, 0.45);
+  border: 1px solid rgba(34, 58, 74, 0.8);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-grid span,
+.detail-note span {
+  color: var(--muted);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.detail-note {
+  grid-column: 1 / -1;
+}
+
+.detail-note p {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.detail-grid-swap {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.detail-note-full {
+  grid-column: 1 / -1;
 }
 
 .swap-list {
@@ -516,6 +657,11 @@ select {
   }
 
   .swap-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid,
+  .detail-grid-swap {
     grid-template-columns: 1fr;
   }
 
